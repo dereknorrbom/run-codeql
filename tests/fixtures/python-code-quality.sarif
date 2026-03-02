@@ -1,0 +1,77 @@
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeQL",
+          "rules": [
+            {
+              "id": "py/sql-injection",
+              "name": "SqlInjection",
+              "shortDescription": { "text": "SQL injection" },
+              "defaultConfiguration": { "level": "error" }
+            },
+            {
+              "id": "py/unused-import",
+              "name": "UnusedImport",
+              "shortDescription": { "text": "Unused import" },
+              "defaultConfiguration": { "level": "warning" }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "py/sql-injection",
+          "level": "error",
+          "message": { "text": "This query depends on [user-provided value](1)." },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "src/db.py", "uriBaseId": "%SRCROOT%" },
+                "region": { "startLine": 42, "startColumn": 5 }
+              }
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": { "uri": "src/views.py", "uriBaseId": "%SRCROOT%" },
+                "region": { "startLine": 10 }
+              },
+              "message": { "text": "user-provided value" }
+            }
+          ]
+        },
+        {
+          "ruleId": "py/unused-import",
+          "level": "warning",
+          "message": { "text": "Import of 'os' is not used." },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "src/utils.py", "uriBaseId": "%SRCROOT%" },
+                "region": { "startLine": 3, "startColumn": 1 }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "py/unused-import",
+          "level": "warning",
+          "message": { "text": "Import of 'sys' is not used." },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "src/utils.py", "uriBaseId": "%SRCROOT%" },
+                "region": { "startLine": 4, "startColumn": 1 }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
