@@ -53,3 +53,16 @@ select = ["E", "F", "W", "I"]
 [project.scripts]
 run-codeql = "run_codeql.cli:main"
 rcql = "run_codeql.cli:main"
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+branch = "main"
+changelog_file = "CHANGELOG.md"
+build_command = "pip install build && python -m build"
+dist_path = "dist/"
+upload_to_vcs_release = true
+
+[tool.semantic_release.commit_parser_options]
+allowed_tags = ["feat", "fix", "perf", "refactor", "docs", "style", "test", "chore", "ci"]
+minor_tags = ["feat"]
+patch_tags = ["fix", "perf"]

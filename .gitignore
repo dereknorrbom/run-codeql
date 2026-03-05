@@ -10,3 +10,5 @@ build/
 venv/
 tests/.DS_Store
 .coverage
+.ruff_cache/
+CHANGELOG.md
