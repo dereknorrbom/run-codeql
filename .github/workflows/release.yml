@@ -9,9 +9,41 @@ permissions:
   id-token: write  # required for PyPI trusted publishing
 
 jobs:
+  ci:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e ".[dev]"
+      - run: pytest tests/ -v
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install black ruff
+      - run: black --check run_codeql tests
+      - run: ruff check run_codeql tests
+
   release:
     name: Semantic Release
     runs-on: ubuntu-latest
+    needs: [ci, lint]
     concurrency: release
     steps:
       - uses: actions/checkout@v4
@@ -37,4 +69,4 @@ jobs:
 
       - name: Publish to PyPI
         if: steps.release.outputs.released == 'true'
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@106e0b0b7c337fa67ed433972f777c6357f78598  # v1.13.0
