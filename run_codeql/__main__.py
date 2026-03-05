@@ -1,3 +1,3 @@
-from run_codeql import main
+from run_codeql.cli import main
 
 main()

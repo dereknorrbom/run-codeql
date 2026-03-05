@@ -65,6 +65,18 @@ def test_report_only_missing_sarif_exits_nonzero(tmp_path):
     assert "No SARIF files found" in result.stderr
 
 
+def test_report_only_fails_on_findings_without_no_fail(tmp_path):
+    make_report_dir(tmp_path, "python-code-quality.sarif")
+    result = run_rcql(["--report-only"], cwd=tmp_path)
+    assert result.returncode != 0
+
+
+def test_report_only_succeeds_when_no_findings(tmp_path):
+    make_report_dir(tmp_path, "empty-code-quality.sarif")
+    result = run_rcql(["--report-only"], cwd=tmp_path)
+    assert result.returncode == 0
+
+
 def test_quiet_suppresses_log_lines(tmp_path):
     make_report_dir(tmp_path, "python-code-quality.sarif")
     result = run_rcql(["--report-only", "--quiet", "--no-fail"], cwd=tmp_path)
@@ -84,3 +96,9 @@ def test_help_exits_zero(tmp_path):
     assert "--report-only" in result.stdout
     assert "--verbose" in result.stdout
     assert "--quiet" in result.stdout
+
+
+def test_no_detected_languages_exits_nonzero(tmp_path):
+    result = run_rcql([], cwd=tmp_path)
+    assert result.returncode != 0
+    assert "No languages detected" in result.stderr

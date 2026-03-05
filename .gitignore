@@ -8,3 +8,5 @@ dist/
 build/
 .venv/
 venv/
+tests/.DS_Store
+.coverage

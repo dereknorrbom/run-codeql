@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from run_codeql import detect_langs, IGNORE_DIRS
+from run_codeql.scanner import detect_langs
+from run_codeql.settings import IGNORE_DIRS
 
 
 def make_files(tmp_path: Path, paths: list[str]) -> None:
@@ -32,6 +33,11 @@ def test_detects_multiple_languages(tmp_path):
 
 def test_detects_actions_from_workflow(tmp_path):
     make_files(tmp_path, [".github/workflows/ci.yml"])
+    assert "actions" in detect_langs(tmp_path)
+
+
+def test_detects_actions_from_yaml_workflow(tmp_path):
+    make_files(tmp_path, [".github/workflows/ci.yaml"])
     assert "actions" in detect_langs(tmp_path)
 
 

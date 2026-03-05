@@ -1,0 +1,144 @@
+"""Language detection and CodeQL scan orchestration helpers."""
+
+import os
+import shutil
+import subprocess
+from pathlib import Path
+
+from run_codeql.logging_utils import log
+from run_codeql.settings import (
+    EXT_TO_LANG,
+    IGNORE_DIRS,
+    LANG_CONFIG,
+    PACKAGES_DIR,
+    TOOLS_DIR,
+)
+
+
+def detect_langs(repo_root: Path) -> list[str]:
+    """Scan the repo for source files and return the CodeQL languages to run."""
+    found: set[str] = set()
+    for _, dirnames, filenames in os.walk(repo_root):
+        dirnames[:] = [d for d in dirnames if d not in IGNORE_DIRS]
+        for fname in filenames:
+            lang = EXT_TO_LANG.get(Path(fname).suffix)
+            if lang:
+                found.add(lang)
+
+    workflows = repo_root / ".github" / "workflows"
+    if workflows.is_dir() and (any(workflows.glob("*.yml")) or any(workflows.glob("*.yaml"))):
+        found.add("actions")
+
+    langs = sorted(found)
+    log(f"Auto-detected languages: {', '.join(langs) if langs else '(none)'}")
+    return langs
+
+
+def ensure_pack(pack_name: str, codeql: Path, quiet: bool) -> None:
+    """Download a CodeQL query pack if it is not already in the local cache."""
+    pack_dir = PACKAGES_DIR / pack_name
+    if pack_dir.exists():
+        return
+    log(f"Downloading missing pack: {pack_name}")
+    subprocess.run(
+        [str(codeql), "pack", "download", pack_name],
+        check=True,
+        stdout=subprocess.DEVNULL if quiet else None,
+        stderr=subprocess.DEVNULL if quiet else None,
+    )
+
+
+def cleanup_reports(report_dir: Path, keep: bool, langs: list[str] | None = None) -> None:
+    """Clean reports before scanning based on target language scope."""
+    if keep:
+        return
+    report_dir.mkdir(parents=True, exist_ok=True)
+    if langs is None:
+        if report_dir.exists():
+            shutil.rmtree(report_dir)
+        report_dir.mkdir(parents=True, exist_ok=True)
+        return
+    for lang in set(langs):
+        target = report_dir / f"{lang}-code-quality.sarif"
+        target.unlink(missing_ok=True)
+
+
+def cleanup_db(work_dir: Path, lang: str, keep: bool) -> None:
+    """Remove an existing language DB unless reusing previous DBs."""
+    if keep:
+        return
+    db_dir = work_dir / f"db-{lang}"
+    if db_dir.exists():
+        shutil.rmtree(db_dir)
+
+
+def run_lang(
+    lang: str,
+    codeql: Path,
+    keep_db: bool,
+    repo_root: Path,
+    work_dir: Path,
+    report_dir: Path,
+    config_file: Path,
+    threads: int = 0,
+    quiet: bool = False,
+) -> Path:
+    """Run DB creation and analysis for one language and return SARIF path."""
+    cfg = LANG_CONFIG.get(lang, {})
+    lang_arg = cfg.get("lang_arg", lang)
+    suite = cfg.get("suite", f"codeql/{lang}-queries:codeql-suites/{lang}-code-quality.qls")
+    build_command = cfg.get("build_command")
+
+    db_dir = work_dir / f"db-{lang}"
+    sarif = report_dir / f"{lang}-code-quality.sarif"
+
+    cleanup_db(work_dir, lang, keep_db)
+
+    log(f"Creating DB for {lang}")
+    create_cmd = [
+        str(codeql),
+        "database",
+        "create",
+        str(db_dir),
+        f"--language={lang_arg}",
+        f"--source-root={repo_root}",
+        "--overwrite",
+        f"--threads={threads}",
+        "--no-run-unnecessary-builds",
+    ]
+    if config_file.is_file():
+        create_cmd += ["--codescanning-config", str(config_file)]
+    if build_command:
+        create_cmd += ["--command", build_command]
+
+    subprocess.run(
+        create_cmd,
+        check=True,
+        stdout=subprocess.DEVNULL if quiet else None,
+        stderr=subprocess.DEVNULL if quiet else None,
+    )
+
+    pack_name = suite.split(":")[0]
+    ensure_pack(pack_name, codeql, quiet=quiet)
+
+    log(f"Analyzing {lang}")
+    analyze_cmd = [
+        str(codeql),
+        "database",
+        "analyze",
+        str(db_dir),
+        suite,
+        "--format=sarif-latest",
+        f"--output={sarif}",
+        f"--threads={threads}",
+        "--ram=6144",
+        f"--search-path={TOOLS_DIR / 'codeql'}",
+    ]
+    subprocess.run(
+        analyze_cmd,
+        check=True,
+        stdout=subprocess.DEVNULL if quiet else None,
+        stderr=subprocess.DEVNULL if quiet else None,
+    )
+
+    return sarif

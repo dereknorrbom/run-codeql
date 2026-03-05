@@ -5,12 +5,51 @@ build-backend = "hatchling.build"
 [project]
 name = "run-codeql"
 version = "0.1.0"
+description = "Run CodeQL code-quality analysis locally, mirroring the GitHub 'Code Quality' check"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Derek Norrbom", email = "dereknorrbom@gmail.com" }]
 requires-python = ">=3.10"
 dependencies = []
+keywords = ["codeql", "static-analysis", "code-quality", "security", "linting"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Security",
+]
+
+[project.urls]
+Homepage = "https://github.com/dereknorrbom/run-codeql"
+Repository = "https://github.com/dereknorrbom/run-codeql"
+"Bug Tracker" = "https://github.com/dereknorrbom/run-codeql/issues"
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "black",
+    "ruff",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
 
 [project.scripts]
-run-codeql = "run_codeql:main"
-rcql = "run_codeql:main"
+run-codeql = "run_codeql.cli:main"
+rcql = "run_codeql.cli:main"

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from run_codeql import summarize_sarif
+from run_codeql.sarif import summarize_sarif
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
