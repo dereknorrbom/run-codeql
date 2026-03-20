@@ -1,22 +1,19 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "run-codeql"
 version = "1.1.1"
 description = "Run CodeQL code-quality analysis locally, mirroring the GitHub 'Code Quality' check"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MIT"
 authors = [{ name = "Derek Norrbom", email = "dereknorrbom@gmail.com" }]
-requires-python = ">=3.10"
-dependencies = []
 keywords = ["codeql", "static-analysis", "code-quality", "security", "linting"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -27,19 +24,26 @@ classifiers = [
     "Topic :: Software Development :: Quality Assurance",
     "Topic :: Security",
 ]
+requires-python = ">=3.10"
+dependencies = []
 
 [project.urls]
 Homepage = "https://github.com/dereknorrbom/run-codeql"
 Repository = "https://github.com/dereknorrbom/run-codeql"
 "Bug Tracker" = "https://github.com/dereknorrbom/run-codeql/issues"
 
-[project.optional-dependencies]
-dev = [
-    "pytest",
-    "pytest-cov",
-    "black",
-    "ruff",
-]
+[project.scripts]
+run-codeql = "run_codeql.cli:main"
+rcql = "run_codeql.cli:main"
+
+[tool.poetry]
+packages = [{ include = "run_codeql" }]
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.0"
+pytest-cov = ">=6.0"
+black = ">=25.0"
+ruff = ">=0.9"
 
 [tool.black]
 line-length = 100
@@ -52,15 +56,11 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 
-[project.scripts]
-run-codeql = "run_codeql.cli:main"
-rcql = "run_codeql.cli:main"
-
 [tool.semantic_release]
 version_toml = ["pyproject.toml:project.version"]
 branch = "main"
 changelog_file = "CHANGELOG.md"
-build_command = "pip install build && python -m build"
+build_command = "pip install poetry && poetry build"
 dist_path = "dist/"
 upload_to_vcs_release = true
 

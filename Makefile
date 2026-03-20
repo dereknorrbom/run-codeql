@@ -1,6 +1,6 @@
 .PHONY: help test lint fmt fmt-check typecheck check fix install
 
-PYTHON := python
+POETRY := poetry run
 SRC    := run_codeql tests
 
 help:
@@ -13,28 +13,28 @@ help:
 	@echo "  fmt-check   Check formatting without modifying files"
 	@echo "  fix         lint + fmt combined (auto-fix everything)"
 	@echo "  check       fmt-check + lint (CI-safe, no modifications)"
-	@echo "  install     Install package in editable mode with dev deps"
+	@echo "  install     Install package and dev deps via Poetry"
 
 test:
-	$(PYTHON) -m pytest tests/
+	$(POETRY) pytest tests/
 
 cov:
-	$(PYTHON) -m pytest tests/ --cov=run_codeql --cov-report=term-missing
+	$(POETRY) pytest tests/ --cov=run_codeql --cov-report=term-missing
 
 lint:
-	ruff check $(SRC)
+	$(POETRY) ruff check $(SRC)
 
 fmt:
-	black $(SRC)
-	ruff check --fix $(SRC)
+	$(POETRY) black $(SRC)
+	$(POETRY) ruff check --fix $(SRC)
 
 fmt-check:
-	black --check $(SRC)
-	ruff check $(SRC)
+	$(POETRY) black --check $(SRC)
+	$(POETRY) ruff check $(SRC)
 
 fix: fmt lint
 
 check: fmt-check lint
 
 install:
-	pip install -e ".[dev]"
+	poetry install --with dev
