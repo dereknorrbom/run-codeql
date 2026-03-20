@@ -1,10 +1,16 @@
-.PHONY: help test lint fmt fmt-check typecheck check fix install
+.PHONY: help test cov lint fmt fmt-check check fix install lock lock-check update audit
 
 POETRY := poetry run
 SRC    := run_codeql tests
 
 help:
 	@echo "Usage: make <target>"
+	@echo ""
+	@echo "  install     Install package and dev deps via Poetry"
+	@echo "  lock        Regenerate poetry.lock from pyproject.toml"
+	@echo "  lock-check  Verify poetry.lock is up to date (non-destructive)"
+	@echo "  update      Update all dev dependencies to latest allowed versions"
+	@echo "  audit       Scan dependencies for known vulnerabilities (requires osv-scanner)"
 	@echo ""
 	@echo "  test        Run the test suite"
 	@echo "  cov         Run tests with coverage report"
@@ -13,7 +19,21 @@ help:
 	@echo "  fmt-check   Check formatting without modifying files"
 	@echo "  fix         lint + fmt combined (auto-fix everything)"
 	@echo "  check       fmt-check + lint (CI-safe, no modifications)"
-	@echo "  install     Install package and dev deps via Poetry"
+
+install:
+	poetry install --with dev
+
+lock:
+	poetry lock
+
+lock-check:
+	poetry check --lock
+
+update:
+	poetry update --with dev
+
+audit:
+	osv-scanner --lockfile poetry.lock
 
 test:
 	$(POETRY) pytest tests/
@@ -34,7 +54,4 @@ fmt-check:
 
 fix: fmt lint
 
-check: fmt-check lint
-
-install:
-	poetry install --with dev
+check: lock-check fmt-check lint

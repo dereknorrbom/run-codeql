@@ -9,6 +9,19 @@ permissions:
   id-token: write  # required for PyPI trusted publishing
 
 jobs:
+  lockfile:
+    name: Lockfile
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: snok/install-poetry@v1
+      - run: poetry check --lock
+
   ci:
     name: Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
@@ -19,8 +32,8 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - uses: snok/install-poetry@v1
@@ -33,8 +46,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - uses: snok/install-poetry@v1
@@ -45,15 +58,15 @@ jobs:
   release:
     name: Semantic Release
     runs-on: ubuntu-latest
-    needs: [ci, lint]
+    needs: [lockfile, ci, lint]
     concurrency: release
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
