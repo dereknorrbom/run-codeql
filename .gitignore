@@ -13,3 +13,4 @@ tests/.DS_Store
 .ruff_cache/
 CHANGELOG.md
 .DS_Store
+project/.overlay/
