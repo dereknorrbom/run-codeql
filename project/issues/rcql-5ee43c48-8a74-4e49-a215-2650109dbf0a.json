@@ -1,0 +1,40 @@
+{
+  "id": "rcql-5ee43c48-8a74-4e49-a215-2650109dbf0a",
+  "title": "rcql fails on uses: security-and-quality in codescanning-config",
+  "description": "Observed in Biblicus: codeql database create fails resolving language-security-and-quality packs during DB creation. Implement user-friendly handling in run-codeql without breaking existing projects.",
+  "type": "bug",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "rcql-74ad05e0-14d1-4f81-9cd3-a14ba7b54f28",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "77460e00-d311-4a51-8b68-c30ecbe10c55",
+      "author": "derek.norrbom",
+      "text": "Investigated failure path: database creation fails when codescanning config contains queries: uses: security-and-quality. Plan is to sanitize config for database create by removing query-selection keys while preserving path filters, then add tests to prevent regressions.",
+      "created_at": "2026-04-03T20:42:31.873899Z"
+    },
+    {
+      "id": "f143a402-1df9-4529-932a-df14b351e16f",
+      "author": "derek.norrbom",
+      "text": "Implemented config sanitization for database creation: rcql now strips top-level query selectors (queries/packs/query-filters) from codescanning config before calling codeql database create, while preserving path filters. Added tests in tests/test_scanner_config.py. Validation: pytest -q (120 passed), make check, plus Biblicus smoke runs: rcql --lang actions --no-fail --quiet and rcql --lang python --no-fail --quiet both succeeded.",
+      "created_at": "2026-04-03T20:44:02.512616Z"
+    },
+    {
+      "id": "5ae44a6c-7748-4537-a297-1d9ff632c865",
+      "author": "derek.norrbom",
+      "text": "Implemented and shipped in commit 2dcaf72: sanitize code scanning config for database creation and added regression tests.",
+      "created_at": "2026-04-03T20:44:21.825646Z"
+    }
+  ],
+  "created_at": "2026-04-03T20:42:29.552521Z",
+  "updated_at": "2026-04-03T20:44:21.825646Z",
+  "closed_at": "2026-04-03T20:44:21.815102Z",
+  "custom": {
+    "project_label": "rcql",
+    "source": "shared"
+  }
+}

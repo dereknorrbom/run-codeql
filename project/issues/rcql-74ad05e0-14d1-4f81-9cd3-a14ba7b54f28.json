@@ -1,0 +1,28 @@
+{
+  "id": "rcql-74ad05e0-14d1-4f81-9cd3-a14ba7b54f28",
+  "title": "Handle codescanning config query shorthands safely",
+  "description": "Make local scans robust when .github/codeql/codeql-config.yml includes GitHub-specific query selectors.",
+  "type": "epic",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "rcql-c57f5d70-ad60-4ea2-a8fc-b22b743f5c2e",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "20bd3c87-c9f2-4ecd-b527-825559383e14",
+      "author": "derek.norrbom",
+      "text": "Epic complete: compatibility fix shipped in develop.",
+      "created_at": "2026-04-03T20:44:21.847393Z"
+    }
+  ],
+  "created_at": "2026-04-03T20:42:27.567657Z",
+  "updated_at": "2026-04-03T20:44:21.847393Z",
+  "closed_at": "2026-04-03T20:44:21.836769Z",
+  "custom": {
+    "project_label": "rcql",
+    "source": "shared"
+  }
+}

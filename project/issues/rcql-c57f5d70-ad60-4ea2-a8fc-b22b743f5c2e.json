@@ -1,0 +1,28 @@
+{
+  "id": "rcql-c57f5d70-ad60-4ea2-a8fc-b22b743f5c2e",
+  "title": "Improve rcql multi-project compatibility",
+  "description": "Track compatibility improvements so rcql works across repositories with different CodeQL configs.",
+  "type": "initiative",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "045d60aa-adeb-4775-97f3-a3e2192e96fb",
+      "author": "derek.norrbom",
+      "text": "Initiative completed by delivering the codescanning-config compatibility improvement.",
+      "created_at": "2026-04-03T20:44:21.871011Z"
+    }
+  ],
+  "created_at": "2026-04-03T20:42:24.266563Z",
+  "updated_at": "2026-04-03T20:44:21.871011Z",
+  "closed_at": "2026-04-03T20:44:21.859596Z",
+  "custom": {
+    "project_label": "rcql",
+    "source": "shared"
+  }
+}
