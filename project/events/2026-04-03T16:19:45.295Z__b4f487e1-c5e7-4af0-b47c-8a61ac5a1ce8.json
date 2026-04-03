@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "b4f487e1-c5e7-4af0-b47c-8a61ac5a1ce8",
+  "issue_id": "rcql-830641f1-b7d4-421c-8c9c-8f94e6c767f4",
+  "event_type": "issue_created",
+  "occurred_at": "2026-04-03T16:19:45.295Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "Suppress duplicate findings that originate from CodeQL database mirror artifact URIs under .codeql/db-*/src/... so rcql output reflects source files only.",
+    "issue_type": "bug",
+    "labels": [],
+    "parent": null,
+    "priority": 1,
+    "status": "open",
+    "title": "Filter .codeql db artifact paths from SARIF summaries"
+  }
+}

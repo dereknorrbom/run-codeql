@@ -1,0 +1,25 @@
+{
+  "id": "rcql-830641f1-b7d4-421c-8c9c-8f94e6c767f4",
+  "title": "Filter .codeql db artifact paths from SARIF summaries",
+  "description": "Suppress duplicate findings that originate from CodeQL database mirror artifact URIs under .codeql/db-*/src/... so rcql output reflects source files only.",
+  "type": "bug",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "84dea35e-2560-4cb0-ad1b-70be778edd75",
+      "author": "derek.norrbom",
+      "text": "Implementing SARIF URI normalization + de-duplication for CodeQL DB mirror artifact paths (/.codeql/db-*/src/...) so output shows canonical source paths once.",
+      "created_at": "2026-04-03T16:20:10.573661Z"
+    }
+  ],
+  "created_at": "2026-04-03T16:19:45.294922Z",
+  "updated_at": "2026-04-03T16:21:15.621194Z",
+  "closed_at": "2026-04-03T16:21:15.621194Z",
+  "custom": {}
+}
