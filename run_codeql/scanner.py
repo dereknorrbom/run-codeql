@@ -8,6 +8,7 @@ from pathlib import Path
 
 from run_codeql.logging_utils import log
 from run_codeql.settings import (
+    DEFAULT_SUITE_PROFILE,
     EXT_TO_LANG,
     IGNORE_DIRS,
     LANG_CONFIG,
@@ -91,6 +92,57 @@ def _sanitize_codescanning_config_for_database_create(
     return sanitized_path
 
 
+class ScanConfigurationError(ValueError):
+    """Raised when repository scan configuration is invalid for local rcql use."""
+
+
+def _extract_query_uses_selectors(config_file: Path) -> list[str]:
+    """Extract top-level `queries: - uses: ...` selectors from a config file."""
+    selectors: list[str] = []
+    in_queries_section = False
+    uses_pattern = re.compile(r"^\s*-\s*uses:\s*(.*?)\s*(?:#.*)?$")
+
+    for raw_line in config_file.read_text(encoding="utf-8").splitlines():
+        if not raw_line.strip() or raw_line.lstrip().startswith("#"):
+            continue
+        indent = len(raw_line) - len(raw_line.lstrip(" "))
+        stripped = raw_line.strip()
+        if indent == 0:
+            if stripped.startswith("queries:"):
+                in_queries_section = True
+                continue
+            in_queries_section = False
+        if not in_queries_section:
+            continue
+        match = uses_pattern.match(raw_line)
+        if match:
+            selector = match.group(1).strip().strip("'\"")
+            if selector:
+                selectors.append(selector)
+    return selectors
+
+
+def _resolve_suite_for_lang(lang: str, config_file: Path) -> str:
+    """Resolve CodeQL suite for a language from repo config or defaults."""
+    profile = DEFAULT_SUITE_PROFILE
+    if config_file.is_file():
+        selectors = _extract_query_uses_selectors(config_file)
+        unique_selectors = sorted(set(selectors))
+        if len(unique_selectors) > 1:
+            raise ScanConfigurationError(
+                "Unsupported codeql-config: multiple 'queries uses' selectors are not supported "
+                f"for local rcql runs: {', '.join(unique_selectors)}"
+            )
+        if unique_selectors:
+            profile = unique_selectors[0]
+    if profile in {"security-and-quality", "code-quality"}:
+        return f"codeql/{lang}-queries:codeql-suites/{lang}-{profile}.qls"
+    raise ScanConfigurationError(
+        "Unsupported codeql-config query selector for local rcql: "
+        f"'{profile}'. Supported selectors: security-and-quality, code-quality."
+    )
+
+
 def cleanup_reports(report_dir: Path, keep: bool, langs: list[str] | None = None) -> None:
     """Clean reports before scanning based on target language scope."""
     if keep:
@@ -129,7 +181,7 @@ def run_lang(
     """Run DB creation and analysis for one language and return SARIF path."""
     cfg = LANG_CONFIG.get(lang, {})
     lang_arg = cfg.get("lang_arg", lang)
-    suite = cfg.get("suite", f"codeql/{lang}-queries:codeql-suites/{lang}-code-quality.qls")
+    suite = _resolve_suite_for_lang(lang=lang, config_file=config_file)
     build_command = cfg.get("build_command")
 
     db_dir = work_dir / f"db-{lang}"
