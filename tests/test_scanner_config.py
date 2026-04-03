@@ -2,10 +2,12 @@ from pathlib import Path
 
 import pytest
 
+import run_codeql.scanner as scanner
 from run_codeql.scanner import (
     ScanConfigurationError,
     _resolve_suite_for_lang,
     _sanitize_codescanning_config_for_database_create,
+    run_lang,
 )
 
 
@@ -66,7 +68,7 @@ def test_sanitize_config_returns_original_when_no_query_sections(tmp_path):
 
 
 def test_resolve_suite_defaults_to_security_and_quality_when_no_config(tmp_path):
-    suite = _resolve_suite_for_lang(lang="python", config_file=tmp_path / "missing.yml")
+    suite = _resolve_suite_for_lang(suite_lang="python", config_file=tmp_path / "missing.yml")
     assert suite == "codeql/python-queries:codeql-suites/python-security-and-quality.qls"
 
 
@@ -76,7 +78,7 @@ def test_resolve_suite_uses_code_quality_from_repo_config(tmp_path):
         config_file,
         ("queries:\n" "  - uses: code-quality\n" "paths:\n" "  - src\n"),
     )
-    suite = _resolve_suite_for_lang(lang="python", config_file=config_file)
+    suite = _resolve_suite_for_lang(suite_lang="python", config_file=config_file)
     assert suite == "codeql/python-queries:codeql-suites/python-code-quality.qls"
 
 
@@ -87,4 +89,45 @@ def test_resolve_suite_rejects_unsupported_query_selector(tmp_path):
         ("queries:\n" "  - uses: security-extended\n"),
     )
     with pytest.raises(ScanConfigurationError):
-        _resolve_suite_for_lang(lang="python", config_file=config_file)
+        _resolve_suite_for_lang(suite_lang="python", config_file=config_file)
+
+
+def test_resolve_suite_uses_javascript_pack_for_typescript_language(tmp_path):
+    suite = _resolve_suite_for_lang(suite_lang="javascript", config_file=tmp_path / "missing.yml")
+    assert suite == "codeql/javascript-queries:codeql-suites/javascript-security-and-quality.qls"
+
+
+def test_run_lang_uses_javascript_queries_suite_for_javascript_typescript(tmp_path, monkeypatch):
+    repo_root = tmp_path / "repo"
+    work_dir = tmp_path / "work"
+    report_dir = tmp_path / "reports"
+    repo_root.mkdir()
+    work_dir.mkdir()
+    report_dir.mkdir()
+    codeql = tmp_path / "codeql"
+    codeql.write_text("", encoding="utf-8")
+    analyze_commands: list[list[str]] = []
+
+    def fake_run(cmd, check, stdout=None, stderr=None):  # noqa: ANN001
+        if cmd[2] == "analyze":
+            analyze_commands.append(cmd)
+        return None
+
+    monkeypatch.setattr(scanner.subprocess, "run", fake_run)
+    monkeypatch.setattr(scanner, "ensure_pack", lambda pack_name, codeql, quiet: None)
+
+    run_lang(
+        lang="javascript-typescript",
+        codeql=codeql,
+        keep_db=True,
+        repo_root=repo_root,
+        work_dir=work_dir,
+        report_dir=report_dir,
+        config_file=tmp_path / "missing.yml",
+    )
+
+    assert analyze_commands
+    assert (
+        "codeql/javascript-queries:codeql-suites/javascript-security-and-quality.qls"
+        in analyze_commands[0]
+    )

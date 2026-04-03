@@ -122,7 +122,7 @@ def _extract_query_uses_selectors(config_file: Path) -> list[str]:
     return selectors
 
 
-def _resolve_suite_for_lang(lang: str, config_file: Path) -> str:
+def _resolve_suite_for_lang(suite_lang: str, config_file: Path) -> str:
     """Resolve CodeQL suite for a language from repo config or defaults."""
     profile = DEFAULT_SUITE_PROFILE
     if config_file.is_file():
@@ -136,7 +136,7 @@ def _resolve_suite_for_lang(lang: str, config_file: Path) -> str:
         if unique_selectors:
             profile = unique_selectors[0]
     if profile in {"security-and-quality", "code-quality"}:
-        return f"codeql/{lang}-queries:codeql-suites/{lang}-{profile}.qls"
+        return f"codeql/{suite_lang}-queries:codeql-suites/{suite_lang}-{profile}.qls"
     raise ScanConfigurationError(
         "Unsupported codeql-config query selector for local rcql: "
         f"'{profile}'. Supported selectors: security-and-quality, code-quality."
@@ -181,7 +181,7 @@ def run_lang(
     """Run DB creation and analysis for one language and return SARIF path."""
     cfg = LANG_CONFIG.get(lang, {})
     lang_arg = cfg.get("lang_arg", lang)
-    suite = _resolve_suite_for_lang(lang=lang, config_file=config_file)
+    suite = _resolve_suite_for_lang(suite_lang=lang_arg, config_file=config_file)
     build_command = cfg.get("build_command")
 
     db_dir = work_dir / f"db-{lang}"
