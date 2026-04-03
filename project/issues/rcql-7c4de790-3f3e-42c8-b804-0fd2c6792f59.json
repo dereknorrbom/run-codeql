@@ -1,0 +1,31 @@
+{
+  "id": "rcql-7c4de790-3f3e-42c8-b804-0fd2c6792f59",
+  "title": "Add repo-level rcql config and stronger default third-party excludes",
+  "description": "",
+  "type": "bug",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "07fe05da-9abd-4232-b263-dbe516693cff",
+      "author": "derek.norrbom",
+      "text": "Implementing repo-level rcql config file support (no backward-compat requirement) and expanding default exclude patterns to cover dist/build artifacts. CLI flags will override config.",
+      "created_at": "2026-04-03T19:46:16.817244Z"
+    },
+    {
+      "id": "ec9dd92c-c522-4d05-8daa-483a688e2f16",
+      "author": "derek.norrbom",
+      "text": "Implemented .rcql.json repo config support and expanded default third-party/build excludes (including dist/build/out/coverage/.next). Merge order is defaults -> repo config -> CLI flags. Added CLI --config switch (default .rcql.json; empty disables). Added/updated tests and docs. Validation: make check and make test both passed (118 tests).",
+      "created_at": "2026-04-03T19:48:18.386344Z"
+    }
+  ],
+  "created_at": "2026-04-03T19:46:14.188140Z",
+  "updated_at": "2026-04-03T19:48:18.397293Z",
+  "closed_at": "2026-04-03T19:48:18.397293Z",
+  "custom": {}
+}
