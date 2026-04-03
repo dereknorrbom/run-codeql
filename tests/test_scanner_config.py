@@ -165,3 +165,45 @@ def test_run_lang_uses_code_quality_report_name_when_config_selects_code_quality
     )
 
     assert sarif_path.name == "python-code-quality.sarif"
+
+
+def test_run_lang_standard_findings_ignores_config_and_forces_code_quality(tmp_path, monkeypatch):
+    repo_root = tmp_path / "repo"
+    work_dir = tmp_path / "work"
+    report_dir = tmp_path / "reports"
+    repo_root.mkdir()
+    work_dir.mkdir()
+    report_dir.mkdir()
+    codeql = tmp_path / "codeql"
+    codeql.write_text("", encoding="utf-8")
+    config_file = tmp_path / "codeql-config.yml"
+    write_config(config_file, "queries:\n  - uses: security-and-quality\n")
+    create_commands: list[list[str]] = []
+    analyze_commands: list[list[str]] = []
+
+    def fake_run(cmd, check, stdout=None, stderr=None):  # noqa: ANN001
+        if cmd[2] == "create":
+            create_commands.append(cmd)
+        if cmd[2] == "analyze":
+            analyze_commands.append(cmd)
+        return None
+
+    monkeypatch.setattr(scanner.subprocess, "run", fake_run)
+    monkeypatch.setattr(scanner, "ensure_pack", lambda pack_name, codeql, quiet: None)
+
+    sarif_path = run_lang(
+        lang="python",
+        codeql=codeql,
+        keep_db=True,
+        repo_root=repo_root,
+        work_dir=work_dir,
+        report_dir=report_dir,
+        config_file=config_file,
+        mode="standard-findings",
+    )
+
+    assert sarif_path.name == "python-code-quality.sarif"
+    assert create_commands
+    assert "--codescanning-config" not in create_commands[0]
+    assert analyze_commands
+    assert "codeql/python-queries:codeql-suites/python-code-quality.qls" in analyze_commands[0]

@@ -138,6 +138,16 @@ def main() -> None:
         metavar="N",
         help="Skip the first N findings before applying --limit (for pagination)",
     )
+    parser.add_argument(
+        "--mode",
+        choices=["default", "standard-findings"],
+        default="default",
+        help=(
+            "Scan mode. 'default' honors repository code scanning configuration "
+            "for security/quality scans. 'standard-findings' runs full-repo "
+            "code-quality analysis similar to GitHub Security & quality standard findings."
+        ),
+    )
     args = parser.parse_args()
 
     configure_logging(args.quiet)
@@ -241,6 +251,7 @@ def main() -> None:
                 work_dir,
                 report_dir,
                 config_file,
+                mode=args.mode,
                 threads=threads_per_lang,
                 quiet=args.quiet,
             )

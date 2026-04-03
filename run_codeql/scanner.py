@@ -144,6 +144,18 @@ def _resolve_suite_for_lang(suite_lang: str, config_file: Path) -> str:
     )
 
 
+def _resolve_suite_for_mode(
+    suite_lang: str,
+    mode: str,
+    config_file: Path,
+) -> str:
+    """Resolve CodeQL suite by scan mode."""
+    if mode == "standard-findings":
+        profile = "code-quality"
+        return f"codeql/{suite_lang}-queries:codeql-suites/{suite_lang}-{profile}.qls"
+    return _resolve_suite_for_lang(suite_lang=suite_lang, config_file=config_file)
+
+
 def cleanup_reports(report_dir: Path, keep: bool, langs: list[str] | None = None) -> None:
     """Clean reports before scanning based on target language scope."""
     if keep:
@@ -187,13 +199,14 @@ def run_lang(
     work_dir: Path,
     report_dir: Path,
     config_file: Path,
+    mode: str = "default",
     threads: int = 0,
     quiet: bool = False,
 ) -> Path:
     """Run DB creation and analysis for one language and return SARIF path."""
     cfg = LANG_CONFIG.get(lang, {})
     lang_arg = cfg.get("lang_arg", lang)
-    suite = _resolve_suite_for_lang(suite_lang=lang_arg, config_file=config_file)
+    suite = _resolve_suite_for_mode(suite_lang=lang_arg, mode=mode, config_file=config_file)
     profile = _profile_from_suite(suite)
     build_command = cfg.get("build_command")
 
@@ -214,7 +227,7 @@ def run_lang(
         f"--threads={threads}",
         "--no-run-unnecessary-builds",
     ]
-    if config_file.is_file():
+    if mode != "standard-findings" and config_file.is_file():
         create_config = _sanitize_codescanning_config_for_database_create(
             config_file=config_file,
             work_dir=work_dir,

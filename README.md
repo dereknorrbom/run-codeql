@@ -38,6 +38,7 @@ rcql --lang python,actions  # scan multiple specific languages
 | `--rule` | Comma-separated rule IDs or fnmatch patterns to restrict findings to (e.g. `py/unused-import` or `py/*`) |
 | `--limit N` | Return at most N findings (after `--files`/`--rule` filtering) |
 | `--offset N` | Skip the first N findings before applying `--limit` (for pagination) |
+| `--mode` | Scan mode: `default` (repo-config-driven) or `standard-findings` (full-repo code-quality parity mode) |
 | `--include-third-party` | Include findings from third-party/vendor paths (default output suppresses common dependency noise) |
 | `--config` | Repo config filename to load from repo root (default: `.rcql.json`; pass `--config ''` to disable) |
 | `--keep-db` | Reuse existing databases instead of recreating them |
@@ -82,6 +83,12 @@ By default, `rcql` exits non-zero if any findings are present or any language sc
 ```sh
 cd ~/projects/my-repo
 rcql
+```
+
+### GitHub standard findings parity scan
+
+```sh
+rcql --mode standard-findings
 ```
 
 ### Quick re-summary after a previous scan
