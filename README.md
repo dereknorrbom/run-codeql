@@ -39,6 +39,7 @@ rcql --lang python,actions  # scan multiple specific languages
 | `--limit N` | Return at most N findings (after `--files`/`--rule` filtering) |
 | `--offset N` | Skip the first N findings before applying `--limit` (for pagination) |
 | `--include-third-party` | Include findings from third-party/vendor paths (default output suppresses common dependency noise) |
+| `--config` | Repo config filename to load from repo root (default: `.rcql.json`; pass `--config ''` to disable) |
 | `--keep-db` | Reuse existing databases instead of recreating them |
 | `--keep-reports` | Do not delete prior SARIF reports before running |
 | `--no-fail` | Exit 0 even if findings or scan errors exist |
@@ -116,7 +117,28 @@ Example output:
 
 When a scan returns hundreds or thousands of findings, use `--files`, `--rule`, `--limit`, and `--offset` to slice the results. These flags work with both `--report-only` and live scans.
 
-By default, summary output suppresses common third-party noise paths such as `node_modules`, `vendor`, and `.codeql` mirror artifacts. Use `--include-third-party` to opt in to those findings.
+By default, summary output suppresses common third-party/build noise paths such as:
+`node_modules`, `vendor`, `dist`, `build`, `out`, `coverage`, `.next`, and `.codeql` mirror artifacts.
+Use `--include-third-party` to opt in to those findings.
+
+### Repository config (`.rcql.json`)
+
+You can define default filters and language selection per repository:
+
+```json
+{
+  "langs": ["javascript-typescript", "python"],
+  "files": ["src/**"],
+  "exclude_files": ["frontend/dist/**", "**/generated/**"],
+  "rules": ["js/*", "py/*"],
+  "include_third_party": false
+}
+```
+
+Precedence is:
+1. Built-in defaults
+2. `.rcql.json`
+3. CLI flags (highest)
 
 **Filter to a specific file:**
 

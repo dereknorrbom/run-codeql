@@ -83,6 +83,13 @@ LANG_CONFIG = {
 DEFAULT_SARIF_EXCLUDE_PATTERNS: list[str] = [
     "**/node_modules/**",
     "**/vendor/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/out/**",
+    "**/coverage/**",
+    "**/.next/**",
+    "**/.nuxt/**",
+    "**/.svelte-kit/**",
     ".codeql/**",
     "**/.codeql/**",
 ]
