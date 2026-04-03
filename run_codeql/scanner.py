@@ -1,6 +1,7 @@
 """Language detection and CodeQL scan orchestration helpers."""
 
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -46,6 +47,48 @@ def ensure_pack(pack_name: str, codeql: Path, quiet: bool) -> None:
         stdout=subprocess.DEVNULL if quiet else None,
         stderr=subprocess.DEVNULL if quiet else None,
     )
+
+
+def _sanitize_codescanning_config_for_database_create(
+    config_file: Path,
+    work_dir: Path,
+    lang: str,
+) -> Path:
+    """Return a config path safe for `codeql database create`.
+
+    GitHub-style code scanning configs commonly include top-level query selectors
+    (`queries`, `packs`, `query-filters`). Those selectors are useful for code
+    scanning workflows but can break local database creation in some environments.
+    For database creation we only need extraction scope controls, so this helper
+    strips query selection sections and preserves the remaining config.
+    """
+    raw = config_file.read_text(encoding="utf-8")
+    lines = raw.splitlines(keepends=True)
+    stripped_keys = {"queries", "packs", "query-filters"}
+    output_lines: list[str] = []
+    changed = False
+    skip_mode = False
+
+    top_level_key_pattern = re.compile(r"^([A-Za-z0-9_-]+):(?:\s*#.*)?$")
+    for line in lines:
+        top_level_match = top_level_key_pattern.match(line.rstrip("\n"))
+        if top_level_match and (len(line) - len(line.lstrip(" "))) == 0:
+            key = top_level_match.group(1)
+            if key in stripped_keys:
+                skip_mode = True
+                changed = True
+                continue
+            skip_mode = False
+        if skip_mode:
+            changed = True
+            continue
+        output_lines.append(line)
+
+    if not changed:
+        return config_file
+    sanitized_path = work_dir / f"codescanning-config-dbcreate-{lang}.yml"
+    sanitized_path.write_text("".join(output_lines), encoding="utf-8")
+    return sanitized_path
 
 
 def cleanup_reports(report_dir: Path, keep: bool, langs: list[str] | None = None) -> None:
@@ -107,7 +150,12 @@ def run_lang(
         "--no-run-unnecessary-builds",
     ]
     if config_file.is_file():
-        create_cmd += ["--codescanning-config", str(config_file)]
+        create_config = _sanitize_codescanning_config_for_database_create(
+            config_file=config_file,
+            work_dir=work_dir,
+            lang=lang,
+        )
+        create_cmd += ["--codescanning-config", str(create_config)]
     if build_command:
         create_cmd += ["--command", build_command]
 
