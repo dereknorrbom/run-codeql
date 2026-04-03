@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "de5faea0-875e-4b20-9c7b-1355fe7ba698",
+  "issue_id": "rcql-813e9f03-4501-4e7f-aff3-da97cd62f79c",
+  "event_type": "issue_created",
+  "occurred_at": "2026-04-03T21:20:54.041Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "Introduce a scan mode that runs full-repo code-quality analysis (ignoring codescanning config path restrictions) to approximate GitHub Security & quality Standard findings counts.",
+    "issue_type": "bug",
+    "labels": [],
+    "parent": "rcql-74ad05e0-14d1-4f81-9cd3-a14ba7b54f28",
+    "priority": 1,
+    "status": "open",
+    "title": "Add full-quality mode to mirror GitHub Standard findings"
+  }
+}
