@@ -65,6 +65,10 @@ def write_sarif_with_paths(tmp_path: Path, paths: list[str]) -> None:
     (report_dir / "python-code-quality.sarif").write_text(json.dumps(sarif), encoding="utf-8")
 
 
+def write_repo_config(tmp_path: Path, payload: dict) -> None:
+    (tmp_path / ".rcql.json").write_text(json.dumps(payload), encoding="utf-8")
+
+
 # ---------------------------------------------------------------------------
 # --files
 # ---------------------------------------------------------------------------
@@ -146,6 +150,14 @@ def test_include_third_party_restores_node_modules(tmp_path):
     assert "Total: 2" in result.stdout
 
 
+def test_default_excludes_hide_dist(tmp_path):
+    write_sarif_with_paths(tmp_path, ["src/app.ts", "frontend/dist/assets/bundle.js"])
+    result = run_rcql(["--report-only", "--no-fail"], cwd=tmp_path)
+    assert result.returncode == 0
+    assert "Total: 1" in result.stdout
+    assert "dist" not in result.stdout
+
+
 def test_exclude_files_flag_hides_matching_paths(tmp_path):
     write_sarif_with_paths(tmp_path, ["src/app.py", "src/generated/foo.py"])
     result = run_rcql(
@@ -154,6 +166,44 @@ def test_exclude_files_flag_hides_matching_paths(tmp_path):
     )
     assert result.returncode == 0
     assert "Total: 1" in result.stdout
+
+
+def test_repo_config_files_filter_is_applied(tmp_path):
+    make_report_dir(tmp_path, "python-code-quality.sarif")
+    write_repo_config(tmp_path, {"files": ["src/utils.py"]})
+    result = run_rcql(["--report-only", "--no-fail"], cwd=tmp_path)
+    assert "Shown: 2" in result.stdout
+    assert "matched: 2" in result.stdout
+
+
+def test_repo_config_exclude_files_is_applied(tmp_path):
+    write_sarif_with_paths(tmp_path, ["src/app.py", "src/generated/foo.py"])
+    write_repo_config(tmp_path, {"exclude_files": ["src/generated/**"]})
+    result = run_rcql(["--report-only", "--no-fail"], cwd=tmp_path)
+    assert result.returncode == 0
+    assert "Total: 1" in result.stdout
+
+
+def test_cli_files_overrides_repo_config_files(tmp_path):
+    make_report_dir(tmp_path, "python-code-quality.sarif")
+    write_repo_config(tmp_path, {"files": ["src/db.py"]})
+    result = run_rcql(
+        ["--report-only", "--no-fail", "--files", "src/utils.py"],
+        cwd=tmp_path,
+    )
+    assert "Shown: 2" in result.stdout
+    assert "matched: 2" in result.stdout
+
+
+def test_repo_config_include_third_party_opt_in(tmp_path):
+    write_sarif_with_paths(
+        tmp_path,
+        ["src/app.py", "tactus-desktop/node_modules/pkg/index.py"],
+    )
+    write_repo_config(tmp_path, {"include_third_party": True})
+    result = run_rcql(["--report-only", "--no-fail"], cwd=tmp_path)
+    assert result.returncode == 0
+    assert "Total: 2" in result.stdout
 
 
 # ---------------------------------------------------------------------------

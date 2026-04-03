@@ -7,6 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from run_codeql.config import CONFIG_FILE_NAME, load_repo_config
 from run_codeql.download import fetch_codeql
 from run_codeql.logging_utils import configure_logging, err, log
 from run_codeql.sarif import build_sarif_summary
@@ -90,6 +91,14 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--config",
+        default=CONFIG_FILE_NAME,
+        help=(
+            "Repository config filename loaded from repo root "
+            f"(default: {CONFIG_FILE_NAME}). Use --config '' to disable."
+        ),
+    )
+    parser.add_argument(
         "--rule",
         default=None,
         help=(
@@ -117,23 +126,33 @@ def main() -> None:
     if args.quiet:
         print("[codeql-local] running in quiet mode", file=sys.stderr, flush=True)
 
-    file_patterns = [p.strip() for p in args.files.split(",") if p.strip()] if args.files else None
-    exclude_file_patterns: list[str] = (
-        [] if args.include_third_party else list(DEFAULT_SARIF_EXCLUDE_PATTERNS)
+    repo_root = Path.cwd()
+    repo_config = load_repo_config(repo_root, args.config)
+
+    file_patterns = (
+        [p.strip() for p in args.files.split(",") if p.strip()] if args.files else repo_config.files
     )
+    include_third_party = args.include_third_party or repo_config.include_third_party
+    exclude_file_patterns: list[str] = (
+        [] if include_third_party else list(DEFAULT_SARIF_EXCLUDE_PATTERNS)
+    )
+    if repo_config.exclude_files:
+        exclude_file_patterns.extend(repo_config.exclude_files)
     if args.exclude_files:
         exclude_file_patterns.extend(
             [p.strip() for p in args.exclude_files.split(",") if p.strip()]
         )
-    rule_patterns = [p.strip() for p in args.rule.split(",") if p.strip()] if args.rule else None
+    rule_patterns = (
+        [p.strip() for p in args.rule.split(",") if p.strip()] if args.rule else repo_config.rules
+    )
 
-    repo_root = Path.cwd()
     work_dir = repo_root / ".codeql"
     report_dir = work_dir / "reports"
 
     if args.report_only:
+        lang_arg = args.lang or (",".join(repo_config.langs) if repo_config.langs else None)
         filter_langs = (
-            {lang_name.strip() for lang_name in args.lang.split(",")} if args.lang else None
+            {lang_name.strip() for lang_name in lang_arg.split(",")} if lang_arg else None
         )
         sarif_files = sorted(report_dir.glob("*.sarif"))
         if filter_langs:
@@ -166,8 +185,9 @@ def main() -> None:
 
     config_file = repo_root / ".github" / "codeql" / "codeql-config.yml"
 
-    if args.lang:
-        langs = [lang_name.strip() for lang_name in args.lang.split(",") if lang_name.strip()]
+    lang_arg = args.lang or (",".join(repo_config.langs) if repo_config.langs else None)
+    if lang_arg:
+        langs = [lang_name.strip() for lang_name in lang_arg.split(",") if lang_name.strip()]
     else:
         langs = detect_langs(repo_root)
     if not langs:
@@ -183,7 +203,7 @@ def main() -> None:
         gitignore.write_text("*\n")
 
     codeql = fetch_codeql()
-    cleanup_reports(report_dir, args.keep_reports, langs=langs if args.lang else None)
+    cleanup_reports(report_dir, args.keep_reports, langs=langs if lang_arg else None)
 
     scan_failed = False
     findings_found = False
