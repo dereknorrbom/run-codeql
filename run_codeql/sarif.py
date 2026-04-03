@@ -6,6 +6,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+_DB_MIRROR_RE = re.compile(r"(?:^|/)\.codeql/db-[^/]+/src/(?P<src>.+)$")
+
 
 @dataclass(frozen=True)
 class SarifSummary:
@@ -29,6 +31,34 @@ def _uri_matches(uri: str, patterns: list[str]) -> bool:
         if fnmatch.fnmatch(uri, f"*/{pat}"):
             return True
     return False
+
+
+def _normalize_uri(uri: str) -> str:
+    """Normalize SARIF artifact URIs to stable, source-like paths.
+
+    CodeQL may emit artifact URIs that point into the generated database mirror,
+    e.g. ``.codeql/db-python/src/<abs-repo-path>/src/file.py``. This function
+    maps those back to repository-relative paths when possible so findings are
+    not shown twice (real path + mirror path).
+    """
+    if not uri:
+        return ""
+
+    normalized = uri.replace("\\", "/")
+    if normalized.startswith("file://"):
+        normalized = normalized[7:]
+
+    match = _DB_MIRROR_RE.search(normalized)
+    if match:
+        normalized = match.group("src")
+
+    cwd_posix = str(Path.cwd().resolve()).replace("\\", "/")
+    if normalized.startswith(cwd_posix + "/"):
+        normalized = normalized[len(cwd_posix) + 1 :]
+    elif normalized == cwd_posix:
+        normalized = "."
+
+    return normalized
 
 
 def build_sarif_summary(
@@ -60,21 +90,35 @@ def build_sarif_summary(
     # Collect all matching results first so we can apply offset/limit uniformly.
     matched: list[dict] = []
     rules_map: dict[str, dict] = {}
+    seen_keys: set[tuple[str, str, int | str, str, str]] = set()
 
     for run in data.get("runs", []):
         rules_map.update(
             {r["id"]: r for r in run.get("tool", {}).get("driver", {}).get("rules", [])}
         )
         for result in run.get("results", []):
+            loc = result.get("locations", [{}])[0]
+            phys = loc.get("physicalLocation", {})
+            raw_uri = phys.get("artifactLocation", {}).get("uri", "")
+            uri = _normalize_uri(raw_uri)
+            line = phys.get("region", {}).get("startLine", "")
+            rule_id = result.get("ruleId", "")
+            level = result.get("level", "warning")
+            message = re.sub(
+                r"\[([^\]]+)\]\(\d+\)", r"\1", result.get("message", {}).get("text", "")
+            )
+
             if files is not None:
-                loc = result.get("locations", [{}])[0]
-                uri = loc.get("physicalLocation", {}).get("artifactLocation", {}).get("uri", "")
                 if not _uri_matches(uri, files):
                     continue
             if rules is not None:
-                rule_id = result.get("ruleId", "")
                 if not any(fnmatch.fnmatch(rule_id, pat) for pat in rules):
                     continue
+
+            dedupe_key = (rule_id, level, line, uri, message)
+            if dedupe_key in seen_keys:
+                continue
+            seen_keys.add(dedupe_key)
             matched.append(result)
 
     # Apply pagination.
@@ -97,7 +141,7 @@ def build_sarif_summary(
             message = re.sub(r"\[([^\]]+)\]\(\d+\)", r"\1", message)
             loc = result.get("locations", [{}])[0]
             phys = loc.get("physicalLocation", {})
-            uri = phys.get("artifactLocation", {}).get("uri", "")
+            uri = _normalize_uri(phys.get("artifactLocation", {}).get("uri", ""))
             line = phys.get("region", {}).get("startLine", "")
             location = f"{uri}:{line}" if line else uri
             finding_lines.append(
