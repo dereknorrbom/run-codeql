@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "045327c5-2d1b-4ca6-9174-4936ff5d6485",
+  "issue_id": "rcql-ec752698-97d8-4570-a1c4-fc8463087bf9",
+  "event_type": "issue_created",
+  "occurred_at": "2026-04-03T16:25:24.447Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "Default-filter node_modules/vendor/generated-style findings from SARIF summaries while allowing explicit override via CLI flags.",
+    "issue_type": "chore",
+    "labels": [],
+    "parent": null,
+    "priority": 1,
+    "status": "open",
+    "title": "Add default SARIF path excludes for third-party noise"
+  }
+}
