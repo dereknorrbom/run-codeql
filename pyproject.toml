@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "run-codeql"
-version = "1.1.1"
+version = "1.2.0"
 description = "Run CodeQL code-quality analysis locally, mirroring the GitHub 'Code Quality' check"
 readme = "README.md"
 license = "MIT"
