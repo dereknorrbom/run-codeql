@@ -1,6 +1,6 @@
 # run-codeql
 
-A pip-installable CLI tool that runs [CodeQL](https://codeql.github.com/) code-quality analysis locally, mirroring the GitHub "Code Quality" check. Install once, run from any repository.
+A pip-installable CLI tool that runs [CodeQL](https://codeql.github.com/) analysis locally. By default it runs the `security-and-quality` suite profile and can honor repository CodeQL query profile settings.
 
 ## Installation
 
@@ -68,6 +68,12 @@ GitHub Actions workflows (`.github/workflows/*.yml` and `.github/workflows/*.yam
 A `.codeql/.gitignore` with `*` is created automatically on first run so these artifacts are not committed.
 
 By default, `rcql` exits non-zero if any findings are present or any language scan fails. Use `--no-fail` to force a zero exit code for informational/reporting workflows.
+
+### Suite selection
+
+- default profile: `security-and-quality`
+- repo override: when `.github/codeql/codeql-config.yml` contains top-level `queries: - uses: ...`, rcql uses that selector for analysis
+- currently supported query selectors: `security-and-quality`, `code-quality`
 
 ## Common workflows
 

@@ -11,14 +11,19 @@ from run_codeql.config import CONFIG_FILE_NAME, load_repo_config
 from run_codeql.download import fetch_codeql
 from run_codeql.logging_utils import configure_logging, err, log
 from run_codeql.sarif import build_sarif_summary
-from run_codeql.scanner import cleanup_reports, detect_langs, run_lang
+from run_codeql.scanner import (
+    ScanConfigurationError,
+    cleanup_reports,
+    detect_langs,
+    run_lang,
+)
 from run_codeql.settings import DEFAULT_SARIF_EXCLUDE_PATTERNS, TOOLS_DIR
 
 
 def main() -> None:
     """CLI main function."""
     parser = argparse.ArgumentParser(
-        description="Run CodeQL code-quality analysis locally (mirrors GitHub 'Code Quality' check)",  # noqa: E501
+        description="Run CodeQL local analysis with security-and-quality defaults",  # noqa: E501
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Outputs:\n"
@@ -243,6 +248,9 @@ def main() -> None:
         except subprocess.CalledProcessError as exc:
             err(f"{lang} failed (exit {exc.returncode})")
             return (lang, f"[{lang}] FAILED (exit {exc.returncode})", 0, 0, True)
+        except ScanConfigurationError as exc:
+            err(f"{lang} failed: {exc}")
+            return (lang, f"[{lang}] FAILED (invalid config)", 0, 0, True)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = {executor.submit(scan, lang): lang for lang in langs}

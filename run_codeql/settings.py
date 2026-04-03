@@ -66,16 +66,14 @@ EXT_TO_LANG: dict[str, str] = {
 LANG_CONFIG = {
     "javascript-typescript": {
         "lang_arg": "javascript",
-        "suite": "codeql/javascript-queries:codeql-suites/javascript-code-quality.qls",
     },
     "rust": {
-        "suite": "codeql/rust-queries:codeql-suites/rust-security-and-quality.qls",
         "build_command": "cd rust && cargo build --workspace --all-targets --locked",
     },
-    "actions": {
-        "suite": "codeql/actions-queries:codeql-suites/actions-security-and-quality.qls",
-    },
+    "actions": {},
 }
+
+DEFAULT_SUITE_PROFILE = "security-and-quality"
 
 # Default SARIF artifact URI excludes for summary output. These reduce triage
 # noise from third-party and generated paths while preserving an opt-in path

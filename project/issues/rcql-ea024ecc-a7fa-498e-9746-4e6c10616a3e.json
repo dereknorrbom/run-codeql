@@ -1,0 +1,40 @@
+{
+  "id": "rcql-ea024ecc-a7fa-498e-9746-4e6c10616a3e",
+  "title": "Default rcql suite profile to security-and-quality",
+  "description": "Change default analyze profile to security-and-quality and honor repo codeql config query selector when supported.",
+  "type": "bug",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "rcql-74ad05e0-14d1-4f81-9cd3-a14ba7b54f28",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "06166a44-ac5d-4e5f-9eb2-d01263bc785c",
+      "author": "derek.norrbom",
+      "text": "Implementing analyze-suite resolver: default security-and-quality, optionally override from .github/codeql/codeql-config.yml queries uses selector, and clear error for unsupported selectors. Adding tests and updating README examples.",
+      "created_at": "2026-04-03T20:49:19.797496Z"
+    },
+    {
+      "id": "76f1d9aa-2b0d-4c1e-bd6a-27511ccc3492",
+      "author": "derek.norrbom",
+      "text": "Implemented: default analyze suite profile is now security-and-quality; repo queries uses selector can override to code-quality/security-and-quality. Added clear invalid-config error path and tests. Validation: pytest -q (123 passed), make check, and Biblicus rcql --lang python now returns 12 findings (exit 1).",
+      "created_at": "2026-04-03T20:50:58.526800Z"
+    },
+    {
+      "id": "714056f5-94b7-4a59-8397-09e130a52fdc",
+      "author": "derek.norrbom",
+      "text": "Shipped in commit df143e5 on develop. rcql now defaults to security-and-quality and honors supported queries uses selectors from codeql-config.yml for analyze-suite selection.",
+      "created_at": "2026-04-03T20:51:09.447267Z"
+    }
+  ],
+  "created_at": "2026-04-03T20:49:16.579902Z",
+  "updated_at": "2026-04-03T20:51:09.447267Z",
+  "closed_at": "2026-04-03T20:51:09.436777Z",
+  "custom": {
+    "project_label": "rcql",
+    "source": "shared"
+  }
+}

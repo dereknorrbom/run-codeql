@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "193e4c48-c5fd-45ec-9214-547bc535cff0",
+  "issue_id": "rcql-c57f5d70-ad60-4ea2-a8fc-b22b743f5c2e",
+  "event_type": "issue_created",
+  "occurred_at": "2026-04-03T20:42:24.266Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "Track compatibility improvements so rcql works across repositories with different CodeQL configs.",
+    "issue_type": "initiative",
+    "labels": [],
+    "parent": null,
+    "priority": 2,
+    "status": "open",
+    "title": "Improve rcql multi-project compatibility"
+  }
+}
