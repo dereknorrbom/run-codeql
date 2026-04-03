@@ -53,6 +53,14 @@ def _normalize_uri(uri: str) -> str:
         normalized = match.group("src")
 
     cwd_posix = str(Path.cwd().resolve()).replace("\\", "/")
+    cwd_no_leading = cwd_posix.lstrip("/")
+    if (
+        cwd_posix.startswith("/")
+        and not normalized.startswith("/")
+        and (normalized == cwd_no_leading or normalized.startswith(cwd_no_leading + "/"))
+    ):
+        normalized = "/" + normalized
+
     if normalized.startswith(cwd_posix + "/"):
         normalized = normalized[len(cwd_posix) + 1 :]
     elif normalized == cwd_posix:

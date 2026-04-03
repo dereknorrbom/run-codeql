@@ -337,3 +337,37 @@ def test_files_filter_matches_normalized_db_mirror_uri(tmp_path):
     summary = build_sarif_summary(sarif_path, files=["src/demo.py"])
     assert summary.total_findings == 1
     assert summary.matched_findings == 1
+
+
+def test_normalizes_mirror_uri_without_leading_slash_in_src_segment(tmp_path):
+    repo_abs = str((Path.cwd() / "src" / "demo.py").resolve()).replace("\\", "/")
+    mirror_uri = f".codeql/db-python/src/{repo_abs.lstrip('/')}"
+
+    sarif = {
+        "runs": [
+            {
+                "tool": {"driver": {"rules": [{"id": "py/unused-import"}]}},
+                "results": [
+                    {
+                        "ruleId": "py/unused-import",
+                        "level": "warning",
+                        "message": {"text": "Mirror no leading slash"},
+                        "locations": [
+                            {
+                                "physicalLocation": {
+                                    "artifactLocation": {"uri": mirror_uri},
+                                    "region": {"startLine": 9},
+                                }
+                            }
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+    sarif_path = tmp_path / "mirror_no_leading.sarif"
+    sarif_path.write_text(json.dumps(sarif), encoding="utf-8")
+
+    summary = build_sarif_summary(sarif_path, verbose=True)
+    assert summary.total_findings == 1
+    assert "src/demo.py:9" in summary.text
