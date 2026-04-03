@@ -16,10 +16,16 @@
       "author": "derek.norrbom",
       "text": "Implementing SARIF URI normalization + de-duplication for CodeQL DB mirror artifact paths (/.codeql/db-*/src/...) so output shows canonical source paths once.",
       "created_at": "2026-04-03T16:20:10.573661Z"
+    },
+    {
+      "id": "64930af0-2eac-4eb1-a31b-98562423cedb",
+      "author": "derek.norrbom",
+      "text": "Follow-up patch: handled mirror URIs where src segment omits the leading slash (e.g. src/Users/...). Revalidated: full test suite 106 passed; Tactus py/multiple-definition report now 5 findings with .codeql mirror duplicates removed.",
+      "created_at": "2026-04-03T16:22:38.496452Z"
     }
   ],
   "created_at": "2026-04-03T16:19:45.294922Z",
-  "updated_at": "2026-04-03T16:21:15.621194Z",
+  "updated_at": "2026-04-03T16:22:38.496452Z",
   "closed_at": "2026-04-03T16:21:15.621194Z",
   "custom": {}
 }
