@@ -116,7 +116,7 @@ def test_run_lang_uses_javascript_queries_suite_for_javascript_typescript(tmp_pa
     monkeypatch.setattr(scanner.subprocess, "run", fake_run)
     monkeypatch.setattr(scanner, "ensure_pack", lambda pack_name, codeql, quiet: None)
 
-    run_lang(
+    sarif_path = run_lang(
         lang="javascript-typescript",
         codeql=codeql,
         keep_db=True,
@@ -131,3 +131,37 @@ def test_run_lang_uses_javascript_queries_suite_for_javascript_typescript(tmp_pa
         "codeql/javascript-queries:codeql-suites/javascript-security-and-quality.qls"
         in analyze_commands[0]
     )
+    assert sarif_path.name == "javascript-typescript-security-and-quality.sarif"
+
+
+def test_run_lang_uses_code_quality_report_name_when_config_selects_code_quality(
+    tmp_path, monkeypatch
+):
+    repo_root = tmp_path / "repo"
+    work_dir = tmp_path / "work"
+    report_dir = tmp_path / "reports"
+    repo_root.mkdir()
+    work_dir.mkdir()
+    report_dir.mkdir()
+    codeql = tmp_path / "codeql"
+    codeql.write_text("", encoding="utf-8")
+    config_file = tmp_path / "codeql-config.yml"
+    write_config(config_file, "queries:\n  - uses: code-quality\n")
+
+    def fake_run(cmd, check, stdout=None, stderr=None):  # noqa: ANN001
+        return None
+
+    monkeypatch.setattr(scanner.subprocess, "run", fake_run)
+    monkeypatch.setattr(scanner, "ensure_pack", lambda pack_name, codeql, quiet: None)
+
+    sarif_path = run_lang(
+        lang="python",
+        codeql=codeql,
+        keep_db=True,
+        repo_root=repo_root,
+        work_dir=work_dir,
+        report_dir=report_dir,
+        config_file=config_file,
+    )
+
+    assert sarif_path.name == "python-code-quality.sarif"

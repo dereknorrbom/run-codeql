@@ -59,6 +59,19 @@ def test_report_only_lang_filter(tmp_path):
     assert "[rust]" not in result.stdout
 
 
+def test_report_only_lang_filter_matches_security_profile_report_name(tmp_path):
+    report_dir = tmp_path / ".codeql" / "reports"
+    report_dir.mkdir(parents=True)
+    shutil.copy(
+        FIXTURES / "python-code-quality.sarif",
+        report_dir / "python-security-and-quality.sarif",
+    )
+    shutil.copy(FIXTURES / "empty-code-quality.sarif", report_dir / "rust-code-quality.sarif")
+    result = run_rcql(["--report-only", "--lang=python", "--no-fail"], cwd=tmp_path)
+    assert "[python]" in result.stdout
+    assert "[rust]" not in result.stdout
+
+
 def test_report_only_missing_sarif_exits_nonzero(tmp_path):
     result = run_rcql(["--report-only"], cwd=tmp_path)
     assert result.returncode != 0

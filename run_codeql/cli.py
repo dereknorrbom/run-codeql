@@ -20,6 +20,19 @@ from run_codeql.scanner import (
 from run_codeql.settings import DEFAULT_SARIF_EXCLUDE_PATTERNS, TOOLS_DIR
 
 
+def _lang_matches_report_file(lang: str, sarif_file: Path) -> bool:
+    stem = sarif_file.stem
+    return stem == lang or stem.startswith(f"{lang}-")
+
+
+def _lang_from_report_file(sarif_file: Path) -> str:
+    stem = sarif_file.stem
+    for suffix in ("-security-and-quality", "-code-quality"):
+        if stem.endswith(suffix):
+            return stem.removesuffix(suffix)
+    return stem
+
+
 def main() -> None:
     """CLI main function."""
     parser = argparse.ArgumentParser(
@@ -28,7 +41,7 @@ def main() -> None:
         epilog=(
             "Outputs:\n"
             "  Databases:  .codeql/db-<lang>/\n"
-            "  SARIF:      .codeql/reports/<lang>-code-quality.sarif\n\n"
+            "  SARIF:      .codeql/reports/<lang>-<profile>.sarif\n\n"
             "CodeQL CLI is auto-downloaded to ~/.codeql-tools/ if not on PATH.\n"
             "Run from the root of any repository."
         ),
@@ -162,7 +175,9 @@ def main() -> None:
         sarif_files = sorted(report_dir.glob("*.sarif"))
         if filter_langs:
             sarif_files = [
-                f for f in sarif_files if f.stem.removesuffix("-code-quality") in filter_langs
+                f
+                for f in sarif_files
+                if any(_lang_matches_report_file(lang, f) for lang in filter_langs)
             ]
         if not sarif_files:
             err(f"No SARIF files found in {report_dir}. Run without --report-only first.")
@@ -171,7 +186,7 @@ def main() -> None:
         report_failed = False
         findings_found = False
         for sarif in sarif_files:
-            lang = sarif.stem.removesuffix("-code-quality")
+            lang = _lang_from_report_file(sarif)
             summary = build_sarif_summary(
                 sarif,
                 verbose=args.verbose,

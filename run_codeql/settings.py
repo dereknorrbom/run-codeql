@@ -74,6 +74,7 @@ LANG_CONFIG = {
 }
 
 DEFAULT_SUITE_PROFILE = "security-and-quality"
+SUPPORTED_SUITE_PROFILES = ("security-and-quality", "code-quality")
 
 # Default SARIF artifact URI excludes for summary output. These reduce triage
 # noise from third-party and generated paths while preserving an opt-in path

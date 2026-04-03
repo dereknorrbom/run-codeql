@@ -28,12 +28,29 @@ def test_cleanup_reports_without_langs_clears_all(tmp_path):
 def test_cleanup_reports_with_langs_clears_only_targeted(tmp_path):
     report_dir = tmp_path / ".codeql" / "reports"
     py = report_dir / "python-code-quality.sarif"
+    py_security = report_dir / "python-security-and-quality.sarif"
     rs = report_dir / "rust-code-quality.sarif"
     act = report_dir / "actions-code-quality.sarif"
     touch(py)
+    touch(py_security)
     touch(rs)
     touch(act)
     cleanup_reports(report_dir, keep=False, langs=["actions"])
     assert not act.exists()
     assert py.exists()
+    assert py_security.exists()
     assert rs.exists()
+
+
+def test_cleanup_reports_with_langs_clears_profile_variants(tmp_path):
+    report_dir = tmp_path / ".codeql" / "reports"
+    py_quality = report_dir / "python-code-quality.sarif"
+    py_security = report_dir / "python-security-and-quality.sarif"
+    rs_security = report_dir / "rust-security-and-quality.sarif"
+    touch(py_quality)
+    touch(py_security)
+    touch(rs_security)
+    cleanup_reports(report_dir, keep=False, langs=["python"])
+    assert not py_quality.exists()
+    assert not py_security.exists()
+    assert rs_security.exists()
