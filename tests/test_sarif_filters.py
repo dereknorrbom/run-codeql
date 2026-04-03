@@ -126,6 +126,27 @@ def test_rule_multiple_rules():
 
 
 # ---------------------------------------------------------------------------
+# --exclude-files filter
+# ---------------------------------------------------------------------------
+
+
+def test_exclude_files_filters_out_matching_paths():
+    summary = build_sarif_summary(SARIF, exclude_files=["src/utils.py"])
+    assert summary.matched_findings == 1
+    assert summary.total_findings == 1
+
+
+def test_exclude_files_with_files_combined():
+    summary = build_sarif_summary(
+        SARIF,
+        files=["src/*.py"],
+        exclude_files=["src/utils.py"],
+    )
+    assert summary.matched_findings == 1
+    assert summary.total_findings == 1
+
+
+# ---------------------------------------------------------------------------
 # --files + --rule combined
 # ---------------------------------------------------------------------------
 

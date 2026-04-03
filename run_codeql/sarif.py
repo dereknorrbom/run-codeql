@@ -73,6 +73,7 @@ def build_sarif_summary(
     sarif: Path,
     verbose: bool = False,
     files: list[str] | None = None,
+    exclude_files: list[str] | None = None,
     rules: list[str] | None = None,
     limit: int | None = None,
     offset: int = 0,
@@ -83,6 +84,7 @@ def build_sarif_summary(
         sarif:   Path to the ``.sarif`` file.
         verbose: Include per-finding details in the output text.
         files:   Optional list of fnmatch patterns matched against artifact URIs.
+        exclude_files: Optional list of fnmatch patterns excluded from artifact URIs.
         rules:   Optional list of fnmatch patterns matched against rule IDs
                  (e.g. ``['py/unused-import']`` or ``['py/*']``).
         limit:   If set, return at most this many findings (after *offset*).
@@ -119,6 +121,8 @@ def build_sarif_summary(
             if files is not None:
                 if not _uri_matches(uri, files):
                     continue
+            if exclude_files is not None and _uri_matches(uri, exclude_files):
+                continue
             if rules is not None:
                 if not any(fnmatch.fnmatch(rule_id, pat) for pat in rules):
                     continue

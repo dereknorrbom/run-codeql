@@ -1,5 +1,6 @@
 """CLI integration tests for --files, --rule, --limit, and --offset flags."""
 
+import json
 import shutil
 import subprocess
 import sys
@@ -24,6 +25,44 @@ def make_report_dir(tmp_path: Path, *sarif_names: str) -> Path:
     for name in sarif_names:
         shutil.copy(FIXTURES / name, report_dir / name)
     return report_dir
+
+
+def write_sarif_with_paths(tmp_path: Path, paths: list[str]) -> None:
+    report_dir = tmp_path / ".codeql" / "reports"
+    report_dir.mkdir(parents=True, exist_ok=True)
+    sarif = {
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "rules": [
+                            {
+                                "id": "py/unused-import",
+                                "shortDescription": {"text": "Unused import"},
+                            }
+                        ]
+                    }
+                },
+                "results": [
+                    {
+                        "ruleId": "py/unused-import",
+                        "level": "warning",
+                        "message": {"text": f"finding-{idx}"},
+                        "locations": [
+                            {
+                                "physicalLocation": {
+                                    "artifactLocation": {"uri": uri},
+                                    "region": {"startLine": idx + 1},
+                                }
+                            }
+                        ],
+                    }
+                    for idx, uri in enumerate(paths)
+                ],
+            }
+        ]
+    }
+    (report_dir / "python-code-quality.sarif").write_text(json.dumps(sarif), encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
@@ -84,6 +123,37 @@ def test_files_verbose_shows_only_matching_locations(tmp_path):
     )
     assert "src/utils.py" in result.stdout
     assert "src/db.py" not in result.stdout
+
+
+def test_default_excludes_hide_node_modules(tmp_path):
+    write_sarif_with_paths(
+        tmp_path,
+        ["src/app.py", "tactus-desktop/node_modules/pkg/index.py"],
+    )
+    result = run_rcql(["--report-only", "--no-fail"], cwd=tmp_path)
+    assert result.returncode == 0
+    assert "Total: 1" in result.stdout
+    assert "node_modules" not in result.stdout
+
+
+def test_include_third_party_restores_node_modules(tmp_path):
+    write_sarif_with_paths(
+        tmp_path,
+        ["src/app.py", "tactus-desktop/node_modules/pkg/index.py"],
+    )
+    result = run_rcql(["--report-only", "--no-fail", "--include-third-party"], cwd=tmp_path)
+    assert result.returncode == 0
+    assert "Total: 2" in result.stdout
+
+
+def test_exclude_files_flag_hides_matching_paths(tmp_path):
+    write_sarif_with_paths(tmp_path, ["src/app.py", "src/generated/foo.py"])
+    result = run_rcql(
+        ["--report-only", "--no-fail", "--exclude-files", "src/generated/**"],
+        cwd=tmp_path,
+    )
+    assert result.returncode == 0
+    assert "Total: 1" in result.stdout
 
 
 # ---------------------------------------------------------------------------
@@ -262,3 +332,13 @@ def test_help_mentions_limit(tmp_path):
 def test_help_mentions_offset(tmp_path):
     result = run_rcql(["--help"], cwd=tmp_path)
     assert "--offset" in result.stdout
+
+
+def test_help_mentions_exclude_files(tmp_path):
+    result = run_rcql(["--help"], cwd=tmp_path)
+    assert "--exclude-files" in result.stdout
+
+
+def test_help_mentions_include_third_party(tmp_path):
+    result = run_rcql(["--help"], cwd=tmp_path)
+    assert "--include-third-party" in result.stdout

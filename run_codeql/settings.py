@@ -76,3 +76,13 @@ LANG_CONFIG = {
         "suite": "codeql/actions-queries:codeql-suites/actions-security-and-quality.qls",
     },
 }
+
+# Default SARIF artifact URI excludes for summary output. These reduce triage
+# noise from third-party and generated paths while preserving an opt-in path
+# to include them via CLI flags.
+DEFAULT_SARIF_EXCLUDE_PATTERNS: list[str] = [
+    "**/node_modules/**",
+    "**/vendor/**",
+    ".codeql/**",
+    "**/.codeql/**",
+]

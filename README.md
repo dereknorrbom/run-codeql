@@ -34,9 +34,11 @@ rcql --lang python,actions  # scan multiple specific languages
 | `--verbose`, `-v` | Print each finding with rule ID, location, and message |
 | `--quiet`, `-q` | Suppress log output; print only final summaries (for agent/scripted use) |
 | `--files` | Comma-separated file paths or fnmatch patterns to restrict findings to (e.g. `src/foo.py` or `src/*.py`) |
+| `--exclude-files` | Comma-separated file paths or fnmatch patterns to exclude from findings (e.g. `src/generated/**`) |
 | `--rule` | Comma-separated rule IDs or fnmatch patterns to restrict findings to (e.g. `py/unused-import` or `py/*`) |
 | `--limit N` | Return at most N findings (after `--files`/`--rule` filtering) |
 | `--offset N` | Skip the first N findings before applying `--limit` (for pagination) |
+| `--include-third-party` | Include findings from third-party/vendor paths (default output suppresses common dependency noise) |
 | `--keep-db` | Reuse existing databases instead of recreating them |
 | `--keep-reports` | Do not delete prior SARIF reports before running |
 | `--no-fail` | Exit 0 even if findings or scan errors exist |
@@ -113,6 +115,8 @@ Example output:
 ### Filtering findings for large codebases
 
 When a scan returns hundreds or thousands of findings, use `--files`, `--rule`, `--limit`, and `--offset` to slice the results. These flags work with both `--report-only` and live scans.
+
+By default, summary output suppresses common third-party noise paths such as `node_modules`, `vendor`, and `.codeql` mirror artifacts. Use `--include-third-party` to opt in to those findings.
 
 **Filter to a specific file:**
 

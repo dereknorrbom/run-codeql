@@ -11,7 +11,7 @@ from run_codeql.download import fetch_codeql
 from run_codeql.logging_utils import configure_logging, err, log
 from run_codeql.sarif import build_sarif_summary
 from run_codeql.scanner import cleanup_reports, detect_langs, run_lang
-from run_codeql.settings import TOOLS_DIR
+from run_codeql.settings import DEFAULT_SARIF_EXCLUDE_PATTERNS, TOOLS_DIR
 
 
 def main() -> None:
@@ -74,6 +74,22 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--exclude-files",
+        default=None,
+        help=(
+            "Comma-separated file paths (or fnmatch patterns) to exclude findings from. "
+            "Applied after URI normalization."
+        ),
+    )
+    parser.add_argument(
+        "--include-third-party",
+        action="store_true",
+        help=(
+            "Include third-party findings. By default, rcql suppresses common "
+            "noise paths like node_modules/vendor/.codeql."
+        ),
+    )
+    parser.add_argument(
         "--rule",
         default=None,
         help=(
@@ -102,6 +118,13 @@ def main() -> None:
         print("[codeql-local] running in quiet mode", file=sys.stderr, flush=True)
 
     file_patterns = [p.strip() for p in args.files.split(",") if p.strip()] if args.files else None
+    exclude_file_patterns: list[str] = (
+        [] if args.include_third_party else list(DEFAULT_SARIF_EXCLUDE_PATTERNS)
+    )
+    if args.exclude_files:
+        exclude_file_patterns.extend(
+            [p.strip() for p in args.exclude_files.split(",") if p.strip()]
+        )
     rule_patterns = [p.strip() for p in args.rule.split(",") if p.strip()] if args.rule else None
 
     repo_root = Path.cwd()
@@ -129,6 +152,7 @@ def main() -> None:
                 sarif,
                 verbose=args.verbose,
                 files=file_patterns,
+                exclude_files=exclude_file_patterns,
                 rules=rule_patterns,
                 limit=args.limit,
                 offset=args.offset,
@@ -184,6 +208,7 @@ def main() -> None:
                 sarif,
                 verbose=args.verbose,
                 files=file_patterns,
+                exclude_files=exclude_file_patterns,
                 rules=rule_patterns,
                 limit=args.limit,
                 offset=args.offset,
