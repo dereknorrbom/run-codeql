@@ -13,6 +13,7 @@ from run_codeql.settings import (
     IGNORE_DIRS,
     LANG_CONFIG,
     PACKAGES_DIR,
+    SUPPORTED_SUITE_PROFILES,
     TOOLS_DIR,
 )
 
@@ -122,7 +123,7 @@ def _extract_query_uses_selectors(config_file: Path) -> list[str]:
     return selectors
 
 
-def _resolve_suite_for_lang(lang: str, config_file: Path) -> str:
+def _resolve_suite_for_lang(suite_lang: str, config_file: Path) -> str:
     """Resolve CodeQL suite for a language from repo config or defaults."""
     profile = DEFAULT_SUITE_PROFILE
     if config_file.is_file():
@@ -135,12 +136,24 @@ def _resolve_suite_for_lang(lang: str, config_file: Path) -> str:
             )
         if unique_selectors:
             profile = unique_selectors[0]
-    if profile in {"security-and-quality", "code-quality"}:
-        return f"codeql/{lang}-queries:codeql-suites/{lang}-{profile}.qls"
+    if profile in SUPPORTED_SUITE_PROFILES:
+        return f"codeql/{suite_lang}-queries:codeql-suites/{suite_lang}-{profile}.qls"
     raise ScanConfigurationError(
         "Unsupported codeql-config query selector for local rcql: "
-        f"'{profile}'. Supported selectors: security-and-quality, code-quality."
+        f"'{profile}'. Supported selectors: {', '.join(SUPPORTED_SUITE_PROFILES)}."
     )
+
+
+def _resolve_suite_for_mode(
+    suite_lang: str,
+    mode: str,
+    config_file: Path,
+) -> str:
+    """Resolve CodeQL suite by scan mode."""
+    if mode == "standard-findings":
+        profile = "code-quality"
+        return f"codeql/{suite_lang}-queries:codeql-suites/{suite_lang}-{profile}.qls"
+    return _resolve_suite_for_lang(suite_lang=suite_lang, config_file=config_file)
 
 
 def cleanup_reports(report_dir: Path, keep: bool, langs: list[str] | None = None) -> None:
@@ -154,8 +167,19 @@ def cleanup_reports(report_dir: Path, keep: bool, langs: list[str] | None = None
         report_dir.mkdir(parents=True, exist_ok=True)
         return
     for lang in set(langs):
-        target = report_dir / f"{lang}-code-quality.sarif"
-        target.unlink(missing_ok=True)
+        for target in report_dir.glob(f"{lang}-*.sarif"):
+            target.unlink(missing_ok=True)
+
+
+def _profile_from_suite(suite: str) -> str:
+    """Extract the profile suffix from a resolved suite string."""
+    for profile in SUPPORTED_SUITE_PROFILES:
+        if suite.endswith(f"-{profile}.qls"):
+            return profile
+    raise ScanConfigurationError(
+        "Could not infer suite profile from resolved suite "
+        f"'{suite}'. Expected one of: {', '.join(SUPPORTED_SUITE_PROFILES)}."
+    )
 
 
 def cleanup_db(work_dir: Path, lang: str, keep: bool) -> None:
@@ -175,17 +199,19 @@ def run_lang(
     work_dir: Path,
     report_dir: Path,
     config_file: Path,
+    mode: str = "default",
     threads: int = 0,
     quiet: bool = False,
 ) -> Path:
     """Run DB creation and analysis for one language and return SARIF path."""
     cfg = LANG_CONFIG.get(lang, {})
     lang_arg = cfg.get("lang_arg", lang)
-    suite = _resolve_suite_for_lang(lang=lang, config_file=config_file)
+    suite = _resolve_suite_for_mode(suite_lang=lang_arg, mode=mode, config_file=config_file)
+    profile = _profile_from_suite(suite)
     build_command = cfg.get("build_command")
 
     db_dir = work_dir / f"db-{lang}"
-    sarif = report_dir / f"{lang}-code-quality.sarif"
+    sarif = report_dir / f"{lang}-{profile}.sarif"
 
     cleanup_db(work_dir, lang, keep_db)
 
@@ -201,7 +227,7 @@ def run_lang(
         f"--threads={threads}",
         "--no-run-unnecessary-builds",
     ]
-    if config_file.is_file():
+    if mode != "standard-findings" and config_file.is_file():
         create_config = _sanitize_codescanning_config_for_database_create(
             config_file=config_file,
             work_dir=work_dir,

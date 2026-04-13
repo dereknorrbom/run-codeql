@@ -1,0 +1,40 @@
+{
+  "id": "rcql-8d005671-fd04-4bbb-9cd8-4869e6971b65",
+  "title": "Fix JavaScript pack resolution for suite profile selection",
+  "description": "Regression: suite resolver builds codeql/javascript-typescript-queries, which does not exist. Must map javascript-typescript language to javascript query pack for analyze suites.",
+  "type": "bug",
+  "status": "closed",
+  "priority": 0,
+  "assignee": null,
+  "creator": null,
+  "parent": "rcql-74ad05e0-14d1-4f81-9cd3-a14ba7b54f28",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "4478d333-54af-49b9-accb-f6db41e44364",
+      "author": "derek.norrbom",
+      "text": "Implementing fix: derive suite pack/suite names from CodeQL language arg mapping (javascript-typescript -> javascript) and add regression tests.",
+      "created_at": "2026-04-03T21:06:29.125373Z"
+    },
+    {
+      "id": "6aa13306-86c1-426e-aedc-909f454ed84b",
+      "author": "derek.norrbom",
+      "text": "Fixed regression by resolving analyze suite pack from normalized suite language (javascript) instead of language key (javascript-typescript). Added run_lang regression test. Validation: tests/test_scanner_config.py (7 passed), make check, and Biblicus rcql --lang javascript-typescript --quiet --no-fail now succeeds.",
+      "created_at": "2026-04-03T21:07:19.725403Z"
+    },
+    {
+      "id": "f2594d29-0c1c-4e26-8375-860938f7d12d",
+      "author": "derek.norrbom",
+      "text": "Shipped in commit 7bcc3ff on develop. JavaScript suite resolution now correctly uses codeql/javascript-queries for javascript-typescript scans.",
+      "created_at": "2026-04-03T21:07:29.292576Z"
+    }
+  ],
+  "created_at": "2026-04-03T21:06:26.726237Z",
+  "updated_at": "2026-04-03T21:07:29.292576Z",
+  "closed_at": "2026-04-03T21:07:29.269634Z",
+  "custom": {
+    "project_label": "rcql",
+    "source": "shared"
+  }
+}

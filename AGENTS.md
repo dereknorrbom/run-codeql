@@ -11,6 +11,64 @@ Warning: Editing project/ directly is a sin against The Way. Do not read or writ
 
 This file provides guidance to AI coding agents when working with code in this repository.
 
+## Git workflow
+
+### Branching (Git Flow)
+
+- `main` — production-ready releases only; never commit directly
+- `develop` — integration branch; merge feature/fix branches here first
+- Feature branches: `feature/<short-description>`
+- Bug fix branches: `fix/<short-description>`
+- Hotfix branches (off `main`): `hotfix/<short-description>`
+
+All pull requests target `develop` unless it is a hotfix, which targets `main` directly. PRs from `develop` → `main` represent a release.
+
+### Commit messages (Semantic Release)
+
+All commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) spec so that `semantic-release` can determine version bumps and generate changelogs automatically.
+
+| Prefix | When to use | Version bump |
+|--------|-------------|--------------|
+| `feat:` | New user-facing feature | minor |
+| `fix:` | Bug fix | patch |
+| `chore:` | Build, tooling, CI, or housekeeping (no production code change) | none |
+| `docs:` | Documentation only | none |
+| `refactor:` | Code restructure with no behaviour change | none |
+| `test:` | Adding or fixing tests | none |
+| `style:` | Formatting, whitespace (no logic change) | none |
+| `perf:` | Performance improvement | patch |
+| `BREAKING CHANGE:` | Footer or `!` suffix — breaking API change | major |
+
+Examples:
+```
+feat: add --mode standard-findings scan mode
+fix: resolve javascript suite packs correctly
+chore: apply black formatting to test_scanner_config
+refactor(tests): update imports to use scanner module directly
+feat!: remove legacy --output flag
+```
+
+Do not include a body or footer beyond what is necessary. Never add a `Co-authored-by` trailer or any attribution to AI tools.
+
+### Pull requests
+
+- Title must follow the same Conventional Commits format as the commit messages above.
+- Do not add `Co-authored-by` lines or any AI attribution in the PR body.
+- Keep the description concise: what changed and why. Include a brief test evidence section (e.g. "All N tests pass").
+- Assign the PR to the appropriate project/milestone if one exists in Kanbus.
+
+### Pre-push checklist
+
+Before pushing a branch or marking a PR ready for review, run the following locally and fix any failures:
+
+```sh
+make fix        # auto-format (black + ruff --fix)
+make check      # verify fmt + lint are clean (CI-equivalent)
+make test       # all tests must pass
+```
+
+CI runs the same checks. A PR with a failing lint or test step will not be merged.
+
 ## Commands
 
 ```sh

@@ -1,0 +1,40 @@
+{
+  "id": "rcql-4e41eaf2-d917-409e-a462-3e3ac0830a79",
+  "title": "Make SARIF filenames match resolved suite profile",
+  "description": "Use profile-aware SARIF filenames (<lang>-<profile>.sarif) and update report-only and cleanup logic to handle security-and-quality/code-quality reports accurately.",
+  "type": "bug",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "rcql-74ad05e0-14d1-4f81-9cd3-a14ba7b54f28",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "8e91c39b-e2b0-42ad-8699-05c28a9fbfab",
+      "author": "derek.norrbom",
+      "text": "Implementing profile-aware report paths and summary parsing: write <lang>-<profile>.sarif, make report-only language filtering profile-agnostic, and clean profile variants per language.",
+      "created_at": "2026-04-03T21:09:12.044862Z"
+    },
+    {
+      "id": "28b8189b-15ae-4cc4-a7ad-5caa343e23d0",
+      "author": "derek.norrbom",
+      "text": "Implemented profile-aware SARIF naming and parsing. Reports now use <lang>-<profile>.sarif; report-only language filter supports security-and-quality and code-quality names; cleanup removes targeted language report variants. Validation: targeted tests (25 passed), full pytest (128 passed), make check, and Biblicus rcql now outputs *-security-and-quality.sarif paths for python/actions/javascript-typescript.",
+      "created_at": "2026-04-03T21:10:45.276109Z"
+    },
+    {
+      "id": "fab97d77-8497-4ab6-9070-02a3505c0782",
+      "author": "derek.norrbom",
+      "text": "Shipped in commit c90f30f on develop. SARIF output files now include resolved suite profile in filename and report-only/cleanup logic support profile-aware names.",
+      "created_at": "2026-04-03T21:10:54.183871Z"
+    }
+  ],
+  "created_at": "2026-04-03T21:09:09.668637Z",
+  "updated_at": "2026-04-03T21:10:54.183871Z",
+  "closed_at": "2026-04-03T21:10:54.173723Z",
+  "custom": {
+    "project_label": "rcql",
+    "source": "shared"
+  }
+}

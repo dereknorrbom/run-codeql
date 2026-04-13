@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "4a23074d-cb66-463a-8f18-b040325ffdc5",
+  "issue_id": "rcql-8d005671-fd04-4bbb-9cd8-4869e6971b65",
+  "event_type": "issue_created",
+  "occurred_at": "2026-04-03T21:06:26.726Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "Regression: suite resolver builds codeql/javascript-typescript-queries, which does not exist. Must map javascript-typescript language to javascript query pack for analyze suites.",
+    "issue_type": "bug",
+    "labels": [],
+    "parent": "rcql-74ad05e0-14d1-4f81-9cd3-a14ba7b54f28",
+    "priority": 0,
+    "status": "open",
+    "title": "Fix JavaScript pack resolution for suite profile selection"
+  }
+}

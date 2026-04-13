@@ -1,0 +1,40 @@
+{
+  "id": "rcql-813e9f03-4501-4e7f-aff3-da97cd62f79c",
+  "title": "Add full-quality mode to mirror GitHub Standard findings",
+  "description": "Introduce a scan mode that runs full-repo code-quality analysis (ignoring codescanning config path restrictions) to approximate GitHub Security & quality Standard findings counts.",
+  "type": "bug",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "rcql-74ad05e0-14d1-4f81-9cd3-a14ba7b54f28",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "465f03a2-c93d-464e-8a1f-efc65f38431f",
+      "author": "derek.norrbom",
+      "text": "Implementing new scan mode flag for GitHub Standard findings parity: force code-quality profile and full-repo extraction scope by bypassing codescanning config during database create.",
+      "created_at": "2026-04-03T21:20:57.613688Z"
+    },
+    {
+      "id": "915c80c7-bd59-47eb-ae32-d3c7dcafd9f9",
+      "author": "derek.norrbom",
+      "text": "Added new CLI scan mode: --mode standard-findings. Behavior: force code-quality suite and bypass codescanning config during database creation to scan full repository scope for GitHub Security & quality standard findings parity. Validation: make check, pytest -q (129 passed), and Biblicus run rcql --lang python --mode standard-findings --quiet --no-fail produced 896 findings including empty-except class signals.",
+      "created_at": "2026-04-03T21:22:56.699340Z"
+    },
+    {
+      "id": "46fca8ca-8824-41cb-acd6-0ccc0f7fcaf6",
+      "author": "derek.norrbom",
+      "text": "Shipped in commit d2aa706 on develop. New --mode standard-findings now forces code-quality and full-repo extraction scope to mirror GitHub Standard findings behavior.",
+      "created_at": "2026-04-03T21:23:08.351936Z"
+    }
+  ],
+  "created_at": "2026-04-03T21:20:54.041037Z",
+  "updated_at": "2026-04-03T21:23:08.351936Z",
+  "closed_at": "2026-04-03T21:23:08.340450Z",
+  "custom": {
+    "project_label": "rcql",
+    "source": "shared"
+  }
+}

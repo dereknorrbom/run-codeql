@@ -38,6 +38,7 @@ rcql --lang python,actions  # scan multiple specific languages
 | `--rule` | Comma-separated rule IDs or fnmatch patterns to restrict findings to (e.g. `py/unused-import` or `py/*`) |
 | `--limit N` | Return at most N findings (after `--files`/`--rule` filtering) |
 | `--offset N` | Skip the first N findings before applying `--limit` (for pagination) |
+| `--mode` | Scan mode: `default` (repo-config-driven) or `standard-findings` (full-repo code-quality parity mode) |
 | `--include-third-party` | Include findings from third-party/vendor paths (default output suppresses common dependency noise) |
 | `--config` | Repo config filename to load from repo root (default: `.rcql.json`; pass `--config ''` to disable) |
 | `--keep-db` | Reuse existing databases instead of recreating them |
@@ -48,7 +49,7 @@ Download behavior can be tuned with environment variables:
 `RCQL_DOWNLOAD_TIMEOUT_SECONDS`, `RCQL_DOWNLOAD_RETRY_ATTEMPTS`, and `RCQL_DOWNLOAD_RETRY_SLEEP_SECONDS`.
 
 Report cleanup behavior before scans:
-- with `--lang`, only the matching `<lang>-code-quality.sarif` reports are replaced
+- with `--lang`, only the matching `<lang>-*.sarif` reports are replaced
 - without `--lang`, all prior SARIF reports are cleared first
 - with `--keep-reports`, no reports are deleted
 
@@ -63,7 +64,7 @@ GitHub Actions workflows (`.github/workflows/*.yml` and `.github/workflows/*.yam
 ### Outputs
 
 - Databases: `.codeql/db-<lang>/`
-- SARIF reports: `.codeql/reports/<lang>-code-quality.sarif`
+- SARIF reports: `.codeql/reports/<lang>-<profile>.sarif`
 
 A `.codeql/.gitignore` with `*` is created automatically on first run so these artifacts are not committed.
 
@@ -82,6 +83,12 @@ By default, `rcql` exits non-zero if any findings are present or any language sc
 ```sh
 cd ~/projects/my-repo
 rcql
+```
+
+### GitHub standard findings parity scan
+
+```sh
+rcql --mode standard-findings
 ```
 
 ### Quick re-summary after a previous scan
@@ -103,7 +110,7 @@ rcql -q -v --report-only
 Example output:
 
 ```
-[python] SARIF: /path/to/.codeql/reports/python-code-quality.sarif
+[python] SARIF: /path/to/.codeql/reports/python-security-and-quality.sarif
   error: 1
   warning: 2
   Total: 3

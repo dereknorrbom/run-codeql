@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "7a7562d2-a41a-4c65-aca2-ca7c545c8740",
+  "issue_id": "rcql-4e41eaf2-d917-409e-a462-3e3ac0830a79",
+  "event_type": "issue_created",
+  "occurred_at": "2026-04-03T21:09:09.668Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "Use profile-aware SARIF filenames (<lang>-<profile>.sarif) and update report-only and cleanup logic to handle security-and-quality/code-quality reports accurately.",
+    "issue_type": "bug",
+    "labels": [],
+    "parent": "rcql-74ad05e0-14d1-4f81-9cd3-a14ba7b54f28",
+    "priority": 1,
+    "status": "open",
+    "title": "Make SARIF filenames match resolved suite profile"
+  }
+}
