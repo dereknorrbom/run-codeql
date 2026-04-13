@@ -3,12 +3,6 @@ from pathlib import Path
 import pytest
 
 import run_codeql.scanner as scanner
-from run_codeql.scanner import (
-    ScanConfigurationError,
-    _resolve_suite_for_lang,
-    _sanitize_codescanning_config_for_database_create,
-    run_lang,
-)
 
 
 def write_config(path: Path, content: str) -> None:
@@ -36,7 +30,7 @@ def test_sanitize_config_removes_query_sections_and_keeps_paths(tmp_path):
         ),
     )
 
-    sanitized = _sanitize_codescanning_config_for_database_create(
+    sanitized = scanner._sanitize_codescanning_config_for_database_create(
         config_file=config_file,
         work_dir=tmp_path,
         lang="python",
@@ -58,7 +52,7 @@ def test_sanitize_config_returns_original_when_no_query_sections(tmp_path):
         ('name: "Example"\n' "paths:\n" "  - src\n" "paths-ignore:\n" "  - tests\n"),
     )
 
-    sanitized = _sanitize_codescanning_config_for_database_create(
+    sanitized = scanner._sanitize_codescanning_config_for_database_create(
         config_file=config_file,
         work_dir=tmp_path,
         lang="python",
@@ -68,7 +62,7 @@ def test_sanitize_config_returns_original_when_no_query_sections(tmp_path):
 
 
 def test_resolve_suite_defaults_to_security_and_quality_when_no_config(tmp_path):
-    suite = _resolve_suite_for_lang(suite_lang="python", config_file=tmp_path / "missing.yml")
+    suite = scanner._resolve_suite_for_lang(suite_lang="python", config_file=tmp_path / "missing.yml")
     assert suite == "codeql/python-queries:codeql-suites/python-security-and-quality.qls"
 
 
@@ -78,7 +72,7 @@ def test_resolve_suite_uses_code_quality_from_repo_config(tmp_path):
         config_file,
         ("queries:\n" "  - uses: code-quality\n" "paths:\n" "  - src\n"),
     )
-    suite = _resolve_suite_for_lang(suite_lang="python", config_file=config_file)
+    suite = scanner._resolve_suite_for_lang(suite_lang="python", config_file=config_file)
     assert suite == "codeql/python-queries:codeql-suites/python-code-quality.qls"
 
 
@@ -88,12 +82,12 @@ def test_resolve_suite_rejects_unsupported_query_selector(tmp_path):
         config_file,
         ("queries:\n" "  - uses: security-extended\n"),
     )
-    with pytest.raises(ScanConfigurationError):
-        _resolve_suite_for_lang(suite_lang="python", config_file=config_file)
+    with pytest.raises(scanner.ScanConfigurationError):
+        scanner._resolve_suite_for_lang(suite_lang="python", config_file=config_file)
 
 
 def test_resolve_suite_uses_javascript_pack_for_typescript_language(tmp_path):
-    suite = _resolve_suite_for_lang(suite_lang="javascript", config_file=tmp_path / "missing.yml")
+    suite = scanner._resolve_suite_for_lang(suite_lang="javascript", config_file=tmp_path / "missing.yml")
     assert suite == "codeql/javascript-queries:codeql-suites/javascript-security-and-quality.qls"
 
 
@@ -116,7 +110,7 @@ def test_run_lang_uses_javascript_queries_suite_for_javascript_typescript(tmp_pa
     monkeypatch.setattr(scanner.subprocess, "run", fake_run)
     monkeypatch.setattr(scanner, "ensure_pack", lambda pack_name, codeql, quiet: None)
 
-    sarif_path = run_lang(
+    sarif_path = scanner.run_lang(
         lang="javascript-typescript",
         codeql=codeql,
         keep_db=True,
@@ -154,7 +148,7 @@ def test_run_lang_uses_code_quality_report_name_when_config_selects_code_quality
     monkeypatch.setattr(scanner.subprocess, "run", fake_run)
     monkeypatch.setattr(scanner, "ensure_pack", lambda pack_name, codeql, quiet: None)
 
-    sarif_path = run_lang(
+    sarif_path = scanner.run_lang(
         lang="python",
         codeql=codeql,
         keep_db=True,
@@ -191,7 +185,7 @@ def test_run_lang_standard_findings_ignores_config_and_forces_code_quality(tmp_p
     monkeypatch.setattr(scanner.subprocess, "run", fake_run)
     monkeypatch.setattr(scanner, "ensure_pack", lambda pack_name, codeql, quiet: None)
 
-    sarif_path = run_lang(
+    sarif_path = scanner.run_lang(
         lang="python",
         codeql=codeql,
         keep_db=True,
