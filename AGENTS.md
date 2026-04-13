@@ -64,10 +64,53 @@ Before pushing a branch or marking a PR ready for review, run the following loca
 ```sh
 make fix        # auto-format (black + ruff --fix)
 make check      # verify fmt + lint are clean (CI-equivalent)
-make test       # all tests must pass
+make test       # all tests must pass (unit + BDD)
 ```
 
 CI runs the same checks. A PR with a failing lint or test step will not be merged.
+
+## Behavior-Driven Development (BDD)
+
+This project uses [pytest-bdd](https://pytest-bdd.readthedocs.io/) to make behavior specifications executable. BDD is mandatory for all new user-facing behavior, following the outside-in process prescribed in `CONTRIBUTING_AGENT.md`.
+
+### Directory layout
+
+```
+tests/
+  features/       # Gherkin .feature files — one file per feature area
+  steps/          # Step definition files — test_<feature>.py per feature file
+```
+
+### The process (per CONTRIBUTING_AGENT.md)
+
+1. Write the Gherkin scenario in a `.feature` file before any production code
+2. Run `make test` — confirm the scenario is collected and **fails**
+3. Write the minimum step definitions and production code to make it pass
+4. Refactor while all scenarios stay green
+
+### Writing scenarios
+
+- Feature files live in `tests/features/<area>.feature`
+- Step definitions live in `tests/steps/test_<area>.py`
+- Each step file must call `scenarios("../features/<area>.feature")` to register all scenarios
+- Use `parsers.parse(...)` for steps with quoted parameters, e.g.:
+
+```python
+@then(parsers.parse('the report is named "{name}"'))
+def report_named(ctx, name): ...
+```
+
+- Steps are shared across scenarios via a `ctx` fixture (a plain dict) rather than module-level state
+- BDD scenarios test observable behavior (CLI output, file names, command arguments); they do not test internal implementation details
+
+### Running BDD tests
+
+```sh
+make test                              # runs everything including BDD
+poetry run pytest tests/steps/ -v     # BDD only
+```
+
+All scenarios must be green before a PR is opened.
 
 ## Commands
 
