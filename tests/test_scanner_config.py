@@ -62,7 +62,9 @@ def test_sanitize_config_returns_original_when_no_query_sections(tmp_path):
 
 
 def test_resolve_suite_defaults_to_security_and_quality_when_no_config(tmp_path):
-    suite = scanner._resolve_suite_for_lang(suite_lang="python", config_file=tmp_path / "missing.yml")
+    suite = scanner._resolve_suite_for_lang(
+        suite_lang="python", config_file=tmp_path / "missing.yml"
+    )
     assert suite == "codeql/python-queries:codeql-suites/python-security-and-quality.qls"
 
 
@@ -87,7 +89,9 @@ def test_resolve_suite_rejects_unsupported_query_selector(tmp_path):
 
 
 def test_resolve_suite_uses_javascript_pack_for_typescript_language(tmp_path):
-    suite = scanner._resolve_suite_for_lang(suite_lang="javascript", config_file=tmp_path / "missing.yml")
+    suite = scanner._resolve_suite_for_lang(
+        suite_lang="javascript", config_file=tmp_path / "missing.yml"
+    )
     assert suite == "codeql/javascript-queries:codeql-suites/javascript-security-and-quality.qls"
 
 
