@@ -2,7 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from run_codeql.download import compute_sha256, parse_sha256_checksum
+from run_codeql.download import codeql_bundle_platform, compute_sha256, parse_sha256_checksum
+from run_codeql.settings import codeql_bin_path
 
 
 def test_parse_sha256_checksum_finds_expected_file():
@@ -28,3 +29,25 @@ def test_compute_sha256(tmp_path: Path):
     assert (
         compute_sha256(target) == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
     )
+
+
+@pytest.mark.parametrize(
+    ("system", "platform_token"),
+    [
+        ("Linux", "linux64"),
+        ("Darwin", "osx64"),
+        ("Windows", "win64"),
+    ],
+)
+def test_codeql_bundle_platform(system: str, platform_token: str):
+    assert codeql_bundle_platform(system) == platform_token
+
+
+def test_codeql_bin_path_uses_windows_executable(tmp_path: Path):
+    assert (
+        codeql_bin_path(system="Windows", tools_dir=tmp_path) == tmp_path / "codeql" / "codeql.exe"
+    )
+
+
+def test_codeql_bin_path_uses_unix_executable(tmp_path: Path):
+    assert codeql_bin_path(system="Linux", tools_dir=tmp_path) == tmp_path / "codeql" / "codeql"

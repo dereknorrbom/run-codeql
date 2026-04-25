@@ -1,6 +1,7 @@
 """Shared configuration and defaults for run_codeql."""
 
 import os
+import platform
 from pathlib import Path
 
 
@@ -16,9 +17,17 @@ def _int_env(name: str, default: int) -> int:
     return value if value > 0 else default
 
 
+def codeql_bin_path(system: str | None = None, tools_dir: Path | None = None) -> Path:
+    """Return the downloaded CodeQL executable path for an operating system."""
+    resolved_system = system or platform.system()
+    resolved_tools_dir = tools_dir or TOOLS_DIR
+    executable = "codeql.exe" if resolved_system == "Windows" else "codeql"
+    return resolved_tools_dir / "codeql" / executable
+
+
 CODEQL_VERSION = "2.24.2"
 TOOLS_DIR = Path.home() / ".codeql-tools"
-CODEQL_BIN = TOOLS_DIR / "codeql" / "codeql"
+CODEQL_BIN = codeql_bin_path()
 PACKAGES_DIR = Path.home() / ".codeql" / "packages"
 DOWNLOAD_TIMEOUT_SECONDS = _int_env("RCQL_DOWNLOAD_TIMEOUT_SECONDS", 60)
 DOWNLOAD_RETRY_ATTEMPTS = _int_env("RCQL_DOWNLOAD_RETRY_ATTEMPTS", 3)
