@@ -13,7 +13,7 @@ This installs two commands: `run-codeql` and the shorthand `rcql`.
 ## Requirements
 
 - Python 3.10+
-- CodeQL CLI — auto-downloaded to `~/.codeql-tools/` on first run if not already on `PATH` (SHA-256 verified, with retry/timeout policy)
+- CodeQL CLI — auto-downloaded on Linux, macOS, and Windows to `~/.codeql-tools/` on first run if not already on `PATH` (SHA-256 verified, with retry/timeout policy)
 
 ## Usage
 
