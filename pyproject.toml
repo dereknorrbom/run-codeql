@@ -36,15 +36,14 @@ Repository = "https://github.com/dereknorrbom/run-codeql"
 run-codeql = "run_codeql.cli:main"
 rcql = "run_codeql.cli:main"
 
-[tool.poetry]
-packages = [{ include = "run_codeql" }]
-
-[tool.poetry.group.dev.dependencies]
-pytest = ">=8.0"
-pytest-bdd = ">=7.0"
-pytest-cov = ">=6.0"
-black = ">=25.0"
-ruff = ">=0.9"
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-bdd>=7.0",
+    "pytest-cov>=6.0",
+    "black>=25.0",
+    "ruff>=0.9",
+]
 
 [tool.black]
 line-length = 100

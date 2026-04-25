@@ -15,15 +15,34 @@ from typing import Callable, TypeVar
 
 from run_codeql.logging_utils import LOGGER, err, log
 from run_codeql.settings import (
-    CODEQL_BIN,
     CODEQL_VERSION,
     DOWNLOAD_RETRY_ATTEMPTS,
     DOWNLOAD_RETRY_SLEEP_SECONDS,
     DOWNLOAD_TIMEOUT_SECONDS,
     TOOLS_DIR,
+    codeql_bin_path,
 )
 
 T = TypeVar("T")
+
+
+def codeql_bundle_platform(system: str | None = None) -> str:
+    """Return the CodeQL bundle platform token for the current operating system."""
+    resolved_system = system or platform.system()
+    if resolved_system == "Linux":
+        return "linux64"
+    if resolved_system == "Darwin":
+        return "osx64"
+    if resolved_system == "Windows":
+        return "win64"
+    raise ValueError(f"Unsupported platform for CodeQL auto-download: {resolved_system}")
+
+
+def _is_usable_codeql(path: Path, system: str) -> bool:
+    """Return whether a downloaded CodeQL binary can be used on the target OS."""
+    if system == "Windows":
+        return path.is_file()
+    return path.is_file() and os.access(path, os.X_OK)
 
 
 def fetch_codeql() -> Path:
@@ -33,17 +52,16 @@ def fetch_codeql() -> Path:
         log(f"Using system CodeQL: {which}")
         return Path(which)
 
-    if CODEQL_BIN.is_file() and os.access(CODEQL_BIN, os.X_OK):
-        log(f"Using downloaded CodeQL: {CODEQL_BIN}")
-        return CODEQL_BIN
-
     system = platform.system()
-    if system == "Linux":
-        plat = "linux64"
-    elif system == "Darwin":
-        plat = "osx64"
-    else:
-        err(f"Unsupported platform for CodeQL auto-download: {system}")
+    downloaded_codeql = codeql_bin_path(system=system, tools_dir=TOOLS_DIR)
+    if _is_usable_codeql(downloaded_codeql, system):
+        log(f"Using downloaded CodeQL: {downloaded_codeql}")
+        return downloaded_codeql
+
+    try:
+        plat = codeql_bundle_platform(system)
+    except ValueError as exc:
+        err(str(exc))
         sys.exit(1)
 
     log(f"Downloading CodeQL CLI {CODEQL_VERSION} to {TOOLS_DIR}")
@@ -72,13 +90,14 @@ def fetch_codeql() -> Path:
     finally:
         tmp.unlink(missing_ok=True)
 
-    if not (CODEQL_BIN.is_file() and os.access(CODEQL_BIN, os.X_OK)):
-        err(f"Downloaded CodeQL bundle missing binary at {CODEQL_BIN}")
+    if not _is_usable_codeql(downloaded_codeql, system):
+        err(f"Downloaded CodeQL bundle missing binary at {downloaded_codeql}")
         sys.exit(1)
 
-    CODEQL_BIN.chmod(CODEQL_BIN.stat().st_mode | 0o111)
-    log(f"Downloaded CodeQL to {CODEQL_BIN}")
-    return CODEQL_BIN
+    if system != "Windows":
+        downloaded_codeql.chmod(downloaded_codeql.stat().st_mode | 0o111)
+    log(f"Downloaded CodeQL to {downloaded_codeql}")
+    return downloaded_codeql
 
 
 def _with_retries(action: str, operation: Callable[[], T]) -> T:
