@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "2a9faa3c-36c8-44fe-9fe7-bb30f694aadb",
+  "issue_id": "rcql-96271515-4d87-4c56-936a-109ed31ec74e",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-01T02:50:09.941Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "Switch pilot orchestration testing from Call-Criteria-Python to run-codeql by adding repo-level orchestration configuration defaults suitable for safe local testing.",
+    "issue_type": "task",
+    "labels": [],
+    "parent": null,
+    "priority": 1,
+    "status": "open",
+    "title": "Configure run-codeql as Kanbus/Tactus orchestration pilot"
+  }
+}

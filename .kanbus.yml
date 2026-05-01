@@ -131,6 +131,21 @@ type_colors:
   story: yellow
   sub-task: bright_cyan
   task: blue
+orchestration:
+  target:
+    branch: develop
+    validation: git diff --check && poetry check --lock
+    publish: pull-request
+  workspace:
+    root: ~/.kanbus/orchestration-workspaces
+  worker:
+    branch_pattern: agent/{{ issue.identifier }}/{{ run.short_id }}
+    runtime: tactus
+    procedure:
+      runtime: tactus
+      file: /Users/derek.norrbom/Projects/Kanbus/workflows/kanbus-worker.tac
+      command: PYTHONPATH=/Users/derek.norrbom/Projects/Tactus python
+      timeout_seconds: 3600
 beads_compatibility: false
 wiki_directory: null
 ai: null

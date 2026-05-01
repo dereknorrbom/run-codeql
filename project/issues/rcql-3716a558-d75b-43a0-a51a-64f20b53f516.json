@@ -1,0 +1,18 @@
+{
+  "id": "rcql-3716a558-d75b-43a0-a51a-64f20b53f516",
+  "title": "Synthetic Tactus smoke test: update README.md note",
+  "description": "Synthetic safe task for Kanbus/Tactus orchestration smoke testing in run-codeql.\n\nRequired behavior:\n- Update README.md only.\n- Add one short sentence noting this file was touched by a Kanbus/Tactus orchestration smoke test.\n- Do not change production code, dependency files, lockfiles, generated artifacts, project/issues, project/events, or project/runs.\n- Do not run git add, git commit, git push, gh, or Kanbus mutation commands from the worker; Kanbus orchestration owns validation and publication.\n- Keep the change intentionally trivial and documentation-only.",
+  "type": "task",
+  "status": "open",
+  "priority": 4,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-05-01T02:50:42.819406Z",
+  "updated_at": "2026-05-01T02:50:42.819406Z",
+  "closed_at": null,
+  "custom": {}
+}
