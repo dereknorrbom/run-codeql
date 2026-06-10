@@ -15,3 +15,4 @@ CHANGELOG.md
 .DS_Store
 project/.overlay/
 project/.cache/index.json
+.env
