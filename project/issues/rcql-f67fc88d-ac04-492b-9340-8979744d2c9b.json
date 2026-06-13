@@ -1,0 +1,31 @@
+{
+  "id": "rcql-f67fc88d-ac04-492b-9340-8979744d2c9b",
+  "title": "Speed up --files iteration by scoping analysis inputs",
+  "description": "",
+  "type": "bug",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "rcql-c57f5d70-ad60-4ea2-a8fc-b22b743f5c2e",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "86c271b0-50bd-4b43-8b67-cc84ad1dcc36",
+      "author": "derek.norrbom",
+      "text": "Investigating current --files behavior. Goal: add an opt-in mode that limits CodeQL analysis scope to specific files for faster local iteration while preserving existing output-filter behavior.",
+      "created_at": "2026-06-10T20:28:44.237684Z"
+    },
+    {
+      "id": "a5a809a8-0bce-4660-839e-3253b4c4f990",
+      "author": "derek.norrbom",
+      "text": "Implemented file-scoped scan mode with new --scan-files flag. Behavior: resolve literal/glob patterns under repo root, copy only matches into a temporary source root, detect languages from that scoped root, and run CodeQL against it. Added guardrails: reject --scan-files with --report-only, and fail fast when no files match. Added docs and tests in tests/test_scan_scope.py and tests/test_cli.py, plus BDD feature/steps for scan-scope behavior. Validation run in this environment: poetry run pytest tests/test_scan_scope.py tests/test_cli.py -q => 18 passed; poetry run ruff check on touched Python files => clean. Note: pytest-bdd is not installed in this environment, so BDD step collection currently errors until that dependency is available.",
+      "created_at": "2026-06-10T20:31:56.469841Z"
+    }
+  ],
+  "created_at": "2026-06-10T20:28:40.122164Z",
+  "updated_at": "2026-06-10T20:32:00.944320Z",
+  "closed_at": null,
+  "custom": {}
+}

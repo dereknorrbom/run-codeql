@@ -5,6 +5,8 @@ import concurrent.futures
 import os
 import subprocess
 import sys
+import tempfile
+from contextlib import ExitStack
 from pathlib import Path
 
 from run_codeql.config import CONFIG_FILE_NAME, load_repo_config
@@ -13,8 +15,10 @@ from run_codeql.logging_utils import configure_logging, err, log
 from run_codeql.sarif import build_sarif_summary
 from run_codeql.scanner import (
     ScanConfigurationError,
+    build_scoped_source_root,
     cleanup_reports,
     detect_langs,
+    resolve_scan_scope_files,
     run_lang,
 )
 from run_codeql.settings import DEFAULT_SARIF_EXCLUDE_PATTERNS, TOOLS_DIR
@@ -87,9 +91,18 @@ def main() -> None:
         "--files",
         default=None,
         help=(
-            "Comma-separated file paths (or fnmatch patterns) to restrict findings to. "
+            "Comma-separated file paths (or fnmatch patterns) to restrict output findings to. "
             "Paths are matched against the end of the SARIF artifact URI "
             "(e.g. 'src/foo.py' or 'src/*.py')"
+        ),
+    )
+    parser.add_argument(
+        "--scan-files",
+        default=None,
+        help=(
+            "Comma-separated file paths (or glob patterns) to limit CodeQL source scope. "
+            "Matched files are copied into a temporary source root before analysis. "
+            "Use this to speed up local iteration."
         ),
     )
     parser.add_argument(
@@ -177,6 +190,10 @@ def main() -> None:
     work_dir = repo_root / ".codeql"
     report_dir = work_dir / "reports"
 
+    if args.report_only and args.scan_files:
+        err("--scan-files cannot be used with --report-only.")
+        sys.exit(1)
+
     if args.report_only:
         lang_arg = args.lang or (",".join(repo_config.langs) if repo_config.langs else None)
         filter_langs = (
@@ -213,17 +230,6 @@ def main() -> None:
         should_fail = report_failed or findings_found
         sys.exit(0 if args.no_fail else int(should_fail))
 
-    config_file = repo_root / ".github" / "codeql" / "codeql-config.yml"
-
-    lang_arg = args.lang or (",".join(repo_config.langs) if repo_config.langs else None)
-    if lang_arg:
-        langs = [lang_name.strip() for lang_name in lang_arg.split(",") if lang_name.strip()]
-    else:
-        langs = detect_langs(repo_root)
-    if not langs:
-        err("No languages detected. Use --lang to specify one or add supported source files.")
-        sys.exit(1)
-
     TOOLS_DIR.mkdir(parents=True, exist_ok=True)
     work_dir.mkdir(parents=True, exist_ok=True)
     report_dir.mkdir(parents=True, exist_ok=True)
@@ -232,72 +238,109 @@ def main() -> None:
     if not gitignore.exists():
         gitignore.write_text("*\n")
 
-    codeql = fetch_codeql()
-    cleanup_reports(report_dir, args.keep_reports, langs=langs if lang_arg else None)
-
-    scan_failed = False
-    findings_found = False
-    threads_per_lang = max(1, (os.cpu_count() or 1) // len(langs)) if len(langs) > 1 else 0
-    log(f"Running {len(langs)} language(s) in parallel with {threads_per_lang} thread(s) each")
-    summaries: dict[str, tuple[str, int]] = {}  # lang -> (text, matched_findings)
-
-    def scan(lang: str) -> tuple[str, str, int, int, bool]:
-        try:
-            sarif = run_lang(
-                lang,
-                codeql,
-                args.keep_db,
-                repo_root,
-                work_dir,
-                report_dir,
-                config_file,
-                mode=args.mode,
-                threads=threads_per_lang,
-                quiet=args.quiet,
+    scan_patterns = (
+        [p.strip() for p in args.scan_files.split(",") if p.strip()] if args.scan_files else []
+    )
+    with ExitStack() as stack:
+        scoped_source_root = repo_root
+        if scan_patterns:
+            scoped_tmp = Path(stack.enter_context(tempfile.TemporaryDirectory(dir=work_dir)))
+            scoped_files = resolve_scan_scope_files(repo_root=repo_root, patterns=scan_patterns)
+            if not scoped_files:
+                err("No files matched --scan-files patterns.")
+                sys.exit(1)
+            build_scoped_source_root(
+                repo_root=repo_root,
+                files=scoped_files,
+                destination=scoped_tmp,
             )
-            summary = build_sarif_summary(
-                sarif,
-                verbose=args.verbose,
-                files=file_patterns,
-                exclude_files=exclude_file_patterns,
-                rules=rule_patterns,
-                limit=args.limit,
-                offset=args.offset,
+            scoped_source_root = scoped_tmp
+            log(
+                "Scoped scan enabled: "
+                f"{len(scoped_files)} file(s) copied to {scoped_source_root}"
             )
-            return (
-                lang,
-                f"[{lang}] SARIF: {sarif}\n{summary.text}",
-                summary.total_findings,
-                summary.matched_findings,
-                False,
-            )
-        except subprocess.CalledProcessError as exc:
-            err(f"{lang} failed (exit {exc.returncode})")
-            return (lang, f"[{lang}] FAILED (exit {exc.returncode})", 0, 0, True)
-        except ScanConfigurationError as exc:
-            err(f"{lang} failed: {exc}")
-            return (lang, f"[{lang}] FAILED (invalid config)", 0, 0, True)
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = {executor.submit(scan, lang): lang for lang in langs}
-        for future in concurrent.futures.as_completed(futures):
-            if future.exception():
-                scan_failed = True
-                lang = futures[future]
-                err(f"{lang} crashed unexpectedly: {future.exception()}")
-                summaries[lang] = (f"[{lang}] FAILED (unexpected exception)", 0)
-                continue
-            lang, text, finding_count, matched_count, failed = future.result()
-            summaries[lang] = (text, matched_count)
-            findings_found = findings_found or finding_count > 0
-            scan_failed = scan_failed or failed
+        config_file = repo_root / ".github" / "codeql" / "codeql-config.yml"
 
-    log("===== Summaries =====")
-    for lang in langs:
-        if lang in summaries:
-            text, matched_count = summaries[lang]
-            if (file_patterns is None and rule_patterns is None) or matched_count > 0:
-                print(text)
+        lang_arg = args.lang or (",".join(repo_config.langs) if repo_config.langs else None)
+        if lang_arg:
+            langs = [lang_name.strip() for lang_name in lang_arg.split(",") if lang_name.strip()]
+        else:
+            langs = detect_langs(scoped_source_root)
+        if not langs:
+            err("No languages detected. Use --lang to specify one or add supported source files.")
+            sys.exit(1)
 
-    should_fail = scan_failed or findings_found
-    sys.exit(0 if args.no_fail else int(should_fail))
+        codeql = fetch_codeql()
+        cleanup_reports(report_dir, args.keep_reports, langs=langs if lang_arg else None)
+
+        scan_failed = False
+        findings_found = False
+        threads_per_lang = max(1, (os.cpu_count() or 1) // len(langs)) if len(langs) > 1 else 0
+        log(
+            f"Running {len(langs)} language(s) in parallel with {threads_per_lang} thread(s) each"
+        )
+        summaries: dict[str, tuple[str, int]] = {}  # lang -> (text, matched_findings)
+
+        def scan(lang: str) -> tuple[str, str, int, int, bool]:
+            try:
+                sarif = run_lang(
+                    lang,
+                    codeql,
+                    args.keep_db,
+                    repo_root,
+                    work_dir,
+                    report_dir,
+                    config_file,
+                    mode=args.mode,
+                    threads=threads_per_lang,
+                    quiet=args.quiet,
+                    source_root=scoped_source_root,
+                    use_codescanning_config=not bool(scan_patterns),
+                )
+                summary = build_sarif_summary(
+                    sarif,
+                    verbose=args.verbose,
+                    files=file_patterns,
+                    exclude_files=exclude_file_patterns,
+                    rules=rule_patterns,
+                    limit=args.limit,
+                    offset=args.offset,
+                )
+                return (
+                    lang,
+                    f"[{lang}] SARIF: {sarif}\n{summary.text}",
+                    summary.total_findings,
+                    summary.matched_findings,
+                    False,
+                )
+            except subprocess.CalledProcessError as exc:
+                err(f"{lang} failed (exit {exc.returncode})")
+                return (lang, f"[{lang}] FAILED (exit {exc.returncode})", 0, 0, True)
+            except ScanConfigurationError as exc:
+                err(f"{lang} failed: {exc}")
+                return (lang, f"[{lang}] FAILED (invalid config)", 0, 0, True)
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = {executor.submit(scan, lang): lang for lang in langs}
+            for future in concurrent.futures.as_completed(futures):
+                if future.exception():
+                    scan_failed = True
+                    lang = futures[future]
+                    err(f"{lang} crashed unexpectedly: {future.exception()}")
+                    summaries[lang] = (f"[{lang}] FAILED (unexpected exception)", 0)
+                    continue
+                lang, text, finding_count, matched_count, failed = future.result()
+                summaries[lang] = (text, matched_count)
+                findings_found = findings_found or finding_count > 0
+                scan_failed = scan_failed or failed
+
+        log("===== Summaries =====")
+        for lang in langs:
+            if lang in summaries:
+                text, matched_count = summaries[lang]
+                if (file_patterns is None and rule_patterns is None) or matched_count > 0:
+                    print(text)
+
+        should_fail = scan_failed or findings_found
+        sys.exit(0 if args.no_fail else int(should_fail))

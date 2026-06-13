@@ -37,6 +37,45 @@ def detect_langs(repo_root: Path) -> list[str]:
     return langs
 
 
+def resolve_scan_scope_files(repo_root: Path, patterns: list[str]) -> list[Path]:
+    """Resolve --scan-files patterns to existing files under repo_root."""
+    matches: dict[str, Path] = {}
+    for raw_pattern in patterns:
+        pattern = raw_pattern.strip()
+        if not pattern:
+            continue
+
+        path_pattern = Path(pattern)
+        candidates: list[Path]
+        if any(token in pattern for token in ("*", "?", "[")):
+            candidates = [path for path in repo_root.glob(pattern) if path.is_file()]
+        elif path_pattern.is_absolute():
+            candidates = [path_pattern] if path_pattern.is_file() else []
+        else:
+            candidate = repo_root / path_pattern
+            candidates = [candidate] if candidate.is_file() else []
+
+        for candidate in candidates:
+            try:
+                relative = candidate.resolve().relative_to(repo_root.resolve())
+            except ValueError:
+                continue
+            matches[str(relative)] = candidate.resolve()
+    return [matches[key] for key in sorted(matches)]
+
+
+def build_scoped_source_root(repo_root: Path, files: list[Path], destination: Path) -> Path:
+    """Copy selected files to destination while preserving repo-relative layout."""
+    repo_root_resolved = repo_root.resolve()
+    destination.mkdir(parents=True, exist_ok=True)
+    for source_file in files:
+        rel_path = source_file.resolve().relative_to(repo_root_resolved)
+        target = destination / rel_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_file, target)
+    return destination
+
+
 def ensure_pack(pack_name: str, codeql: Path, quiet: bool) -> None:
     """Download a CodeQL query pack if it is not already in the local cache."""
     pack_dir = PACKAGES_DIR / pack_name
@@ -202,6 +241,8 @@ def run_lang(
     mode: str = "default",
     threads: int = 0,
     quiet: bool = False,
+    source_root: Path | None = None,
+    use_codescanning_config: bool = True,
 ) -> Path:
     """Run DB creation and analysis for one language and return SARIF path."""
     cfg = LANG_CONFIG.get(lang, {})
@@ -216,18 +257,19 @@ def run_lang(
     cleanup_db(work_dir, lang, keep_db)
 
     log(f"Creating DB for {lang}")
+    effective_source_root = source_root or repo_root
     create_cmd = [
         str(codeql),
         "database",
         "create",
         str(db_dir),
         f"--language={lang_arg}",
-        f"--source-root={repo_root}",
+        f"--source-root={effective_source_root}",
         "--overwrite",
         f"--threads={threads}",
         "--no-run-unnecessary-builds",
     ]
-    if mode != "standard-findings" and config_file.is_file():
+    if use_codescanning_config and mode != "standard-findings" and config_file.is_file():
         create_config = _sanitize_codescanning_config_for_database_create(
             config_file=config_file,
             work_dir=work_dir,

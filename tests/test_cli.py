@@ -115,3 +115,15 @@ def test_no_detected_languages_exits_nonzero(tmp_path):
     result = run_rcql([], cwd=tmp_path)
     assert result.returncode != 0
     assert "No languages detected" in result.stderr
+
+
+def test_scan_files_cannot_be_used_with_report_only(tmp_path):
+    result = run_rcql(["--scan-files", "src/app.py", "--report-only"], cwd=tmp_path)
+    assert result.returncode != 0
+    assert "--scan-files cannot be used with --report-only" in result.stderr
+
+
+def test_scan_files_without_matches_exits_nonzero(tmp_path):
+    result = run_rcql(["--scan-files", "src/missing.py", "--no-fail"], cwd=tmp_path)
+    assert result.returncode != 0
+    assert "No files matched --scan-files patterns" in result.stderr

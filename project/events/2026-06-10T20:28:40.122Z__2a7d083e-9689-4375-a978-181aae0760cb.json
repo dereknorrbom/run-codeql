@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "2a7d083e-9689-4375-a978-181aae0760cb",
+  "issue_id": "rcql-f67fc88d-ac04-492b-9340-8979744d2c9b",
+  "event_type": "issue_created",
+  "occurred_at": "2026-06-10T20:28:40.122Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "bug",
+    "labels": [],
+    "parent": "rcql-c57f5d70-ad60-4ea2-a8fc-b22b743f5c2e",
+    "priority": 1,
+    "status": "open",
+    "title": "Speed up --files iteration by scoping analysis inputs"
+  }
+}
